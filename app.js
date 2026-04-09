@@ -19,6 +19,14 @@ const state = {
   scanBuffer: '',
   scanTimeout: null,
   uiReady: false,
+
+  // camera
+  scannerModalEl: null,
+  scannerReaderEl: null,
+  scannerCloseBtnEl: null,
+  scannerStatusEl: null,
+  scannerRunning: false,
+  cameraLocked: false,
 };
 
 const els = {};
@@ -27,6 +35,7 @@ window.addEventListener('DOMContentLoaded', init);
 
 function init() {
   cacheDom();
+  ensureScannerModal();
   bindEvents();
   loadFromStorage();
   renderLogList();
@@ -78,16 +87,49 @@ function cacheDom() {
   els.keyboardTestInput = document.getElementById('keyboardTestInput');
 }
 
+function ensureScannerModal() {
+  let modal = document.getElementById('scanner-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'scanner-modal';
+    modal.className = 'modal';
+    modal.setAttribute('aria-hidden', 'true');
+    modal.innerHTML = `
+      <div class="pairing-box" style="background:#111;color:#fff;width:min(100%,460px);padding:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
+          <div style="font-size:1rem;font-weight:700;">即時掃描 QR Code</div>
+          <button id="scanner-close-btn" type="button" class="icon-btn" style="flex:0 0 auto;">
+            <span class="material-icons-round">close</span>
+          </button>
+        </div>
+        <div id="scanner-reader" style="width:100%;min-height:280px;background:#000;border-radius:12px;overflow:hidden;"></div>
+        <div id="scanner-status" style="margin-top:10px;font-size:.88rem;color:#aaa;text-align:center;">
+          啟動鏡頭中...
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+
+  state.scannerModalEl = modal;
+  state.scannerReaderEl = modal.querySelector('#scanner-reader');
+  state.scannerCloseBtnEl = modal.querySelector('#scanner-close-btn');
+  state.scannerStatusEl = modal.querySelector('#scanner-status');
+}
+
 function bindEvents() {
   els.headerBar?.addEventListener('click', toggleHistoryView);
+
   els.btStatusBtn?.addEventListener('click', (event) => {
     event.stopPropagation();
     toggleBluetooth();
   });
-  els.cameraBtn?.addEventListener('click', (event) => {
+
+  els.cameraBtn?.addEventListener('click', async (event) => {
     event.stopPropagation();
-    openCamera();
+    await openCamera();
   });
+
   els.clearLogsBtn?.addEventListener('click', clearLogs);
   els.historyBtn?.addEventListener('click', toggleHistoryView);
   els.syncBtn?.addEventListener('click', forceSync);
@@ -96,6 +138,8 @@ function bindEvents() {
   els.closePairingBtn?.addEventListener('click', closePairing);
   els.confirmKeyboardBtn?.addEventListener('click', confirmKeyboard);
   els.qrFileInput?.addEventListener('change', handleImageScan);
+
+  state.scannerCloseBtnEl?.addEventListener('click', closeCameraScanner);
 
   document.addEventListener('keydown', handleScannerKeydown);
   document.addEventListener('click', handleDocumentClick, true);
@@ -117,7 +161,9 @@ function bindEvents() {
   document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState === 'visible' && state.isConnected) {
       await requestWakeLock();
-      focusTrap();
+      if (!state.scannerRunning) focusTrap();
+    } else if (document.visibilityState === 'hidden' && state.scannerRunning) {
+      await closeCameraScanner(false);
     }
   });
 }
@@ -125,6 +171,7 @@ function bindEvents() {
 function handleDocumentClick(event) {
   if (els.keyboardModal?.classList.contains('active')) return;
   if (els.pairingModal?.classList.contains('active')) return;
+  if (state.scannerModalEl?.classList.contains('active')) return;
   if (event.target === els.keyboardTestInput) return;
   focusTrap();
 }
@@ -282,7 +329,7 @@ function normalizeInput(data) {
       return decodeURIComponent(escape(window.atob(trimmed)));
     }
   } catch (error) {
-    // ignore base64 decode failures
+    // ignore
   }
 
   return trimmed;
@@ -455,6 +502,7 @@ function clearLogs() {
 }
 
 function toggleHistoryView() {
+  if (state.scannerRunning) return;
   els.body?.classList.toggle('history-mode');
 }
 
@@ -540,6 +588,7 @@ async function releaseWakeLock() {
 function handleScannerKeydown(event) {
   if (els.keyboardModal?.classList.contains('active')) return;
   if (els.pairingModal?.classList.contains('active')) return;
+  if (state.scannerRunning) return;
 
   if (event.key === 'Enter') {
     if (state.scanBuffer.length > 0) {
@@ -566,29 +615,149 @@ function handleScannerKeydown(event) {
 
 function focusTrap() {
   if (els.keyboardModal?.classList.contains('active')) return;
+  if (state.scannerRunning) return;
   els.scanInputTrap?.focus({ preventScroll: true });
 }
 
-function openCamera() {
+async function openCamera() {
   if (typeof window.Html5Qrcode === 'undefined') {
     window.alert('QR 套件尚未載入，請重新整理後再試。');
     return;
   }
 
+  if (state.cameraLocked || state.scannerRunning) return;
+  state.cameraLocked = true;
+
   try {
-    if (els.qrFileInput) {
-      els.qrFileInput.value = '';
-      els.qrFileInput.click();
+    els.body?.classList.remove('history-mode');
+
+    if (!state.html5Qrcode) {
+      state.html5Qrcode = new Html5Qrcode('scanner-reader');
+    }
+
+    state.scannerModalEl?.classList.add('active');
+    state.scannerModalEl?.setAttribute('aria-hidden', 'false');
+    if (state.scannerStatusEl) state.scannerStatusEl.textContent = '啟動鏡頭中...';
+
+    const config = {
+      fps: 10,
+      qrbox: (viewfinderWidth, viewfinderHeight) => {
+        const side = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.72);
+        return { width: side, height: side };
+      },
+      aspectRatio: 1.0,
+      disableFlip: false,
+      rememberLastUsedCamera: true,
+    };
+
+    let started = false;
+
+    try {
+      await state.html5Qrcode.start(
+        { facingMode: { exact: 'environment' } },
+        config,
+        onCameraScanSuccess,
+        onCameraScanFailure
+      );
+      started = true;
+    } catch (e1) {
+      try {
+        await state.html5Qrcode.start(
+          { facingMode: 'environment' },
+          config,
+          onCameraScanSuccess,
+          onCameraScanFailure
+        );
+        started = true;
+      } catch (e2) {
+        const devices = await Html5Qrcode.getCameras();
+        if (!devices || !devices.length) {
+          throw new Error('找不到可用鏡頭');
+        }
+
+        const backCam =
+          devices.find((d) => /back|rear|environment/gi.test(d.label || '')) || devices[0];
+
+        await state.html5Qrcode.start(
+          { deviceId: { exact: backCam.id } },
+          config,
+          onCameraScanSuccess,
+          onCameraScanFailure
+        );
+        started = true;
+      }
+    }
+
+    if (started) {
+      state.scannerRunning = true;
+      if (state.scannerStatusEl) state.scannerStatusEl.textContent = '請將 QR Code 對準框內';
+      addSystemLog('相機掃描已啟動');
     }
   } catch (error) {
-    console.error('相機呼叫失敗', error);
-    reportClientError(`[相機喚醒失敗] ${error.message}`, error.stack || '');
-    window.alert('無法開啟相機。');
+    console.error('相機啟動失敗', error);
+    await closeCameraScanner(false);
+    reportClientError(`[相機啟動失敗] ${error.message}`, error.stack || '');
+    window.alert(`無法開啟相機：${error.message}`);
+  } finally {
+    state.cameraLocked = false;
   }
 }
 
+function onCameraScanFailure() {
+  // 持續掃描中，不做提示
+}
+
+async function onCameraScanSuccess(decodedText) {
+  if (state.cameraLocked) return;
+  state.cameraLocked = true;
+
+  try {
+    if (state.scannerStatusEl) state.scannerStatusEl.textContent = '已掃描成功，正在驗證...';
+    playSuccessBeeps(1);
+    await closeCameraScanner(false);
+    handleScanInput(decodedText, 'camera');
+  } catch (error) {
+    console.error('掃描後處理失敗', error);
+    reportClientError(`[掃描後處理失敗] ${error.message}`, error.stack || '');
+  } finally {
+    window.setTimeout(() => {
+      state.cameraLocked = false;
+    }, 300);
+  }
+}
+
+async function closeCameraScanner(refocus = true) {
+  try {
+    if (state.html5Qrcode) {
+      const isScanning =
+        typeof state.html5Qrcode.isScanning === 'function'
+          ? state.html5Qrcode.isScanning()
+          : state.scannerRunning;
+
+      if (isScanning) {
+        await state.html5Qrcode.stop();
+      }
+
+      try {
+        await state.html5Qrcode.clear();
+      } catch (_) {
+        // ignore
+      }
+    }
+  } catch (error) {
+    console.warn('關閉掃描器失敗', error);
+  } finally {
+    state.scannerRunning = false;
+    state.scannerModalEl?.classList.remove('active');
+    state.scannerModalEl?.setAttribute('aria-hidden', 'true');
+    if (state.scannerStatusEl) state.scannerStatusEl.textContent = '啟動鏡頭中...';
+    if (refocus) focusTrap();
+  }
+}
+
+// 保留舊功能，避免其他地方呼叫報錯
 async function handleImageScan(event) {
-  const file = event.target.files && event.target.files[0];
+  const file = event?.target?.files && event.target.files[0];
   if (!file) {
     focusTrap();
     return;
@@ -609,7 +778,8 @@ async function handleImageScan(event) {
       if (!tempEl) {
         tempEl = document.createElement('div');
         tempEl.id = tempId;
-        tempEl.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;';
+        tempEl.style.cssText =
+          'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;';
         document.body.appendChild(tempEl);
       }
       state.html5Qrcode = new Html5Qrcode(tempId);
