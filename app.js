@@ -111,10 +111,10 @@ function ensureScannerModal() {
     document.body.appendChild(modal);
   }
 
-  state.scannerModalEl = modal;
-  state.scannerReaderEl = modal.querySelector('#scanner-reader');
-  state.scannerCloseBtnEl = modal.querySelector('#scanner-close-btn');
-  state.scannerStatusEl = modal.querySelector('#scanner-status');
+state.scannerModalEl = modal;
+state.scannerReaderEl = modal.querySelector('#qr-reader') || modal.querySelector('#scanner-reader');
+state.scannerCloseBtnEl = modal.querySelector('#closeScannerBtn') || modal.querySelector('#scanner-close-btn');
+state.scannerStatusEl = modal.querySelector('#scanner-status') || modal.querySelector('.scanner-hint');
 }
 
 function bindEvents() {
@@ -628,12 +628,17 @@ async function openCamera() {
   if (state.cameraLocked || state.scannerRunning) return;
   state.cameraLocked = true;
 
+  if (!state.scannerReaderEl) {
+  throw new Error('找不到掃描器容器，請確認 HTML 內是否存在 #qr-reader 或 #scanner-reader');
+}
+
   try {
     els.body?.classList.remove('history-mode');
 
-    if (!state.html5Qrcode) {
-      state.html5Qrcode = new Html5Qrcode('scanner-reader');
-    }
+   if (!state.html5Qrcode) {
+  const readerId = state.scannerReaderEl?.id || 'qr-reader';
+  state.html5Qrcode = new Html5Qrcode(readerId);
+}
 
     state.scannerModalEl?.classList.add('active');
     state.scannerModalEl?.setAttribute('aria-hidden', 'false');
