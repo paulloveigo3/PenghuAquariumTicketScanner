@@ -1,790 +1,825 @@
-(() => {
-  'use strict';
+const CONFIG = {
+  apiBaseUrl: 'PASTE_YOUR_APPS_SCRIPT_EXEC_URL_HERE',
+  storagePrefix: 'ticketScanner_v3',
+  defaultAutoSyncMinutes: 10,
+  timezone: 'Asia/Taipei',
+};
 
-  let wakeLock = null;
-  let html5QrcodeScanner = null;
-  let isConnectedState = false;
-  let localHistory = [];
-  let uploadQueue = [];
-  let localValidationDB = {};
-  let localWhiteListRules = [];
-  let localSoundRules = {};
-  let autoSyncTimer = null;
-  let systemSettings = { autoSyncMinutes: 10 };
-  let scanBuffer = '';
-  let scanTimeout = null;
-  let audioCtx = null;
+const state = {
+  wakeLock: null,
+  html5Qrcode: null,
+  isConnected: false,
+  localHistory: [],
+  uploadQueue: [],
+  localValidationDB: {},
+  localWhiteListRules: [],
+  localSoundRules: {},
+  systemSettings: { autoSyncMinutes: CONFIG.defaultAutoSyncMinutes },
+  autoSyncTimer: null,
+  scanBuffer: '',
+  scanTimeout: null,
+  uiReady: false,
+};
 
-  const $ = (id) => document.getElementById(id);
+const els = {};
 
-  const server = {
-    available() {
-      return typeof google !== 'undefined' && google.script && google.script.run;
-    },
+window.addEventListener('DOMContentLoaded', init);
 
-    call(method, ...args) {
-      return new Promise((resolve, reject) => {
-        if (!this.available()) {
-          reject(new Error('google.script.run unavailable'));
-          return;
-        }
+function init() {
+  cacheDom();
+  bindEvents();
+  loadFromStorage();
+  renderLogList();
+  applyAutoSyncInterval(state.systemSettings.autoSyncMinutes);
+  updateSyncStatus('待機中');
+  hideUserInfo();
+  setDisplay('READY', 'waiting');
+  addSystemLog('前端已啟動');
+  focusTrap();
+  state.uiReady = true;
 
-        try {
-          google.script.run
-            .withSuccessHandler(resolve)
-            .withFailureHandler((err) => reject(normalizeError(err)))
-            [method](...args);
-        } catch (err) {
-          reject(normalizeError(err));
-        }
-      });
-    },
+  performSystemCheck();
+  fetchSystemSettings();
 
-    log(message, stack = '') {
-      if (!this.available()) return;
-      try {
-        google.script.run.logToServer(message, stack);
-      } catch (err) {
-        console.warn('logToServer failed:', err);
+  if (
+    Object.keys(state.localValidationDB).length === 0 ||
+    Object.keys(state.localSoundRules).length === 0 ||
+    state.localWhiteListRules.length === 0
+  ) {
+    forceSync();
+  }
+}
+
+function cacheDom() {
+  els.body = document.body;
+  els.headerBar = document.getElementById('headerBar');
+  els.btStatusBtn = document.getElementById('btStatusBtn');
+  els.btText = document.getElementById('btText');
+  els.cameraBtn = document.getElementById('cameraBtn');
+  els.displayCard = document.getElementById('displayCard');
+  els.displayValue = document.getElementById('displayValue');
+  els.userInfoBox = document.getElementById('userInfoBox');
+  els.userInfoLine1 = document.getElementById('userInfoLine1');
+  els.userInfoLine2 = document.getElementById('userInfoLine2');
+  els.logList = document.getElementById('logList');
+  els.syncDot = document.getElementById('syncDot');
+  els.syncText = document.getElementById('syncText');
+  els.clearLogsBtn = document.getElementById('clearLogsBtn');
+  els.historyBtn = document.getElementById('historyBtn');
+  els.syncBtn = document.getElementById('syncBtn');
+  els.reloadBtn = document.getElementById('reloadBtn');
+  els.scanInputTrap = document.getElementById('scanInputTrap');
+  els.qrFileInput = document.getElementById('qr-file-input');
+  els.pairingModal = document.getElementById('pairing-modal');
+  els.manualConnectBtn = document.getElementById('manualConnectBtn');
+  els.closePairingBtn = document.getElementById('closePairingBtn');
+  els.keyboardModal = document.getElementById('keyboard-modal');
+  els.confirmKeyboardBtn = document.getElementById('confirmKeyboardBtn');
+  els.keyboardTestInput = document.getElementById('keyboardTestInput');
+}
+
+function bindEvents() {
+  els.headerBar?.addEventListener('click', toggleHistoryView);
+  els.btStatusBtn?.addEventListener('click', (event) => {
+    event.stopPropagation();
+    toggleBluetooth();
+  });
+  els.cameraBtn?.addEventListener('click', (event) => {
+    event.stopPropagation();
+    openCamera();
+  });
+  els.clearLogsBtn?.addEventListener('click', clearLogs);
+  els.historyBtn?.addEventListener('click', toggleHistoryView);
+  els.syncBtn?.addEventListener('click', forceSync);
+  els.reloadBtn?.addEventListener('click', () => window.location.reload());
+  els.manualConnectBtn?.addEventListener('click', manualConnect);
+  els.closePairingBtn?.addEventListener('click', closePairing);
+  els.confirmKeyboardBtn?.addEventListener('click', confirmKeyboard);
+  els.qrFileInput?.addEventListener('change', handleImageScan);
+
+  document.addEventListener('keydown', handleScannerKeydown);
+  document.addEventListener('click', handleDocumentClick, true);
+
+  window.addEventListener('error', (event) => {
+    reportClientError(
+      `[全域錯誤] ${event.message} (行: ${event.lineno}, 列: ${event.colno})`,
+      event.error && event.error.stack ? event.error.stack : ''
+    );
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason = event.reason;
+    const message = typeof reason === 'string' ? reason : String(reason);
+    const stack = reason && reason.stack ? reason.stack : '';
+    reportClientError(`[Promise 錯誤] ${message}`, stack);
+  });
+
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible' && state.isConnected) {
+      await requestWakeLock();
+      focusTrap();
+    }
+  });
+}
+
+function handleDocumentClick(event) {
+  if (els.keyboardModal?.classList.contains('active')) return;
+  if (els.pairingModal?.classList.contains('active')) return;
+  if (event.target === els.keyboardTestInput) return;
+  focusTrap();
+}
+
+function storageKey(name) {
+  return `${CONFIG.storagePrefix}:${name}`;
+}
+
+function getTodayKey() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: CONFIG.timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+
+function loadFromStorage() {
+  try {
+    const todayKey = getTodayKey();
+    const lastRunDate = localStorage.getItem(storageKey('lastRunDate'));
+
+    const soundRules = localStorage.getItem(storageKey('localSoundRules'));
+    if (soundRules) state.localSoundRules = JSON.parse(soundRules);
+
+    const settings = localStorage.getItem(storageKey('systemSettings'));
+    if (settings) {
+      state.systemSettings = Object.assign({}, state.systemSettings, JSON.parse(settings));
+    }
+
+    if (lastRunDate !== todayKey) {
+      state.localHistory = [];
+      state.uploadQueue = [];
+      localStorage.setItem(storageKey('localHistory'), JSON.stringify([]));
+      localStorage.setItem(storageKey('uploadQueue'), JSON.stringify([]));
+      localStorage.setItem(storageKey('lastRunDate'), todayKey);
+    } else {
+      state.localHistory = safeJsonParse(localStorage.getItem(storageKey('localHistory')), []);
+      state.uploadQueue = safeJsonParse(localStorage.getItem(storageKey('uploadQueue')), []);
+    }
+
+    state.localValidationDB = safeJsonParse(localStorage.getItem(storageKey('localValidationDB')), {});
+    state.localWhiteListRules = safeJsonParse(localStorage.getItem(storageKey('localWhiteListRules')), []);
+  } catch (error) {
+    console.error('Storage Error', error);
+    addSystemLog('本機快取讀取失敗', 'st-exp');
+  }
+}
+
+function saveToStorage() {
+  localStorage.setItem(storageKey('localHistory'), JSON.stringify(state.localHistory));
+  localStorage.setItem(storageKey('uploadQueue'), JSON.stringify(state.uploadQueue));
+  localStorage.setItem(storageKey('localValidationDB'), JSON.stringify(state.localValidationDB));
+  localStorage.setItem(storageKey('localWhiteListRules'), JSON.stringify(state.localWhiteListRules));
+  localStorage.setItem(storageKey('localSoundRules'), JSON.stringify(state.localSoundRules));
+  localStorage.setItem(storageKey('systemSettings'), JSON.stringify(state.systemSettings));
+  localStorage.setItem(storageKey('lastRunDate'), getTodayKey());
+}
+
+function safeJsonParse(text, fallback) {
+  if (!text) return fallback;
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    return fallback;
+  }
+}
+
+function sanitizeAutoSyncMinutes(value) {
+  const num = parseInt(value, 10);
+  if (Number.isNaN(num)) return CONFIG.defaultAutoSyncMinutes;
+  return Math.min(Math.max(num, 1), 1440);
+}
+
+function applyAutoSyncInterval(minutes) {
+  const safeMinutes = sanitizeAutoSyncMinutes(minutes);
+  state.systemSettings.autoSyncMinutes = safeMinutes;
+
+  if (state.autoSyncTimer) clearInterval(state.autoSyncTimer);
+  state.autoSyncTimer = window.setInterval(autoSync, safeMinutes * 60 * 1000);
+}
+
+function updateSyncStatus(text, isBlinking = false) {
+  if (els.syncText) els.syncText.innerText = text;
+  if (els.syncDot) els.syncDot.classList.toggle('syncing', Boolean(isBlinking));
+}
+
+function setDisplay(text, status = 'waiting') {
+  if (!els.displayValue || !els.displayCard) return;
+  els.displayValue.innerHTML = text;
+  els.displayCard.className = `display-card ${status}`;
+}
+
+function showUserInfo(line1, line2) {
+  if (!els.userInfoBox) return;
+  els.userInfoLine1.innerText = line1 || '--';
+  els.userInfoLine2.innerText = line2 || '--';
+  els.userInfoBox.hidden = false;
+}
+
+function hideUserInfo() {
+  if (!els.userInfoBox) return;
+  els.userInfoBox.hidden = true;
+  els.userInfoLine1.innerText = '--';
+  els.userInfoLine2.innerText = '--';
+}
+
+function getNowParts() {
+  const now = new Date();
+  const time = new Intl.DateTimeFormat('zh-TW', {
+    timeZone: CONFIG.timezone,
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).format(now);
+
+  const fullTime = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: CONFIG.timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).format(now).replace(' ', ' ');
+
+  const ymdParts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: CONFIG.timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now).split('-');
+
+  return {
+    time,
+    fullTime,
+    todayYmdCompact: `${ymdParts[0]}${ymdParts[1]}${ymdParts[2]}`,
+  };
+}
+
+function normalizeInput(data) {
+  if (typeof data !== 'string') return '';
+  const trimmed = data.trim();
+  if (!trimmed) return '';
+
+  try {
+    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+    if (
+      trimmed.length >= 8 &&
+      trimmed.length % 4 === 0 &&
+      trimmed.includes('=') &&
+      base64Regex.test(trimmed)
+    ) {
+      return decodeURIComponent(escape(window.atob(trimmed)));
+    }
+  } catch (error) {
+    // ignore base64 decode failures
+  }
+
+  return trimmed;
+}
+
+function handleScanInput(data, source = 'keyboard') {
+  if (!data) return;
+  const rawInput = data.trim();
+  if (!rawInput) return;
+
+  if (source === 'keyboard' && /[^\x00-\x7F]/.test(rawInput)) {
+    playErrorBeep();
+    setDisplay('輸入法錯誤!', 'error');
+    openKeyboardModal();
+    return;
+  }
+
+  const decodedData = normalizeInput(rawInput);
+  processLocalLogic(decodedData, rawInput);
+  focusTrap();
+}
+
+function processLocalLogic(rawInput, originalRaw = rawInput) {
+  const { time, fullTime, todayYmdCompact } = getNowParts();
+  hideUserInfo();
+
+  if (rawInput.includes(',')) {
+    processTicketLikeRecord(rawInput, originalRaw, time, fullTime, todayYmdCompact);
+    return;
+  }
+
+  const isValidationTarget = state.localWhiteListRules.some((rule) => {
+    const prefix = String(rule.prefix || '').toUpperCase();
+    const length = Number(rule.length || 0);
+    return prefix && rawInput.toUpperCase().startsWith(prefix) && rawInput.length === length;
+  });
+
+  if (isValidationTarget) {
+    processValidationCard(rawInput, originalRaw, time, fullTime);
+    return;
+  }
+
+  playSuccessBeeps(1);
+  setDisplay(escapeHtml(rawInput), 'success');
+  const record = { code: rawInput, time, fullTime, status: 'ok', className: 'st-ok' };
+  pushRecord(record, originalRaw);
+}
+
+function processTicketLikeRecord(rawInput, originalRaw, time, fullTime, todayYmdCompact) {
+  const parts = rawInput.split(',').map((part) => part.trim());
+  const code = parts[0] || '';
+  const datePart = parts[1] || '';
+
+  if (!code) {
+    playErrorBeep();
+    setDisplay('格式錯誤', 'error');
+    addSystemLog('掃描到空白票號', 'st-exp');
+    return;
+  }
+
+  if (datePart && datePart !== todayYmdCompact) {
+    playErrorBeep();
+    setDisplay(`過期票 (${escapeHtml(datePart)})`, 'error');
+    addLogToUI({ time, code: `${code} (過期)`, className: 'st-exp' });
+    return;
+  }
+
+  const isDuplicate = state.localHistory.some((item) => item.code === code && item.status === 'ok');
+  const prefix = extractPrefix(code);
+  const rule = resolveSoundRule(prefix);
+  const ticketTypeName = rule.name || '';
+
+  if (isDuplicate) {
+    playDuplicateSound();
+    setDisplay('重複入場', 'warning');
+    if (ticketTypeName) showUserInfo(ticketTypeName, '重複票券');
+    addLogToUI({ time, code, className: 'st-warn' });
+    return;
+  }
+
+  playSuccessBeeps(rule.sound || 1);
+  if (ticketTypeName) {
+    setDisplay(`${escapeHtml(code)}<div style="font-size:1rem;color:#aaa;margin-top:6px;">${escapeHtml(ticketTypeName)}</div>`, 'success');
+    showUserInfo(ticketTypeName, prefix || 'TICKET');
+  } else {
+    setDisplay(escapeHtml(code), 'success');
+  }
+
+  const record = { code, time, fullTime, status: 'ok', className: 'st-ok' };
+  pushRecord(record, originalRaw);
+}
+
+function processValidationCard(rawInput, originalRaw, time, fullTime) {
+  const validUser = state.localValidationDB[rawInput];
+  const isDuplicate = state.localHistory.some((item) => item.code === rawInput && item.status === 'ok');
+
+  if (!validUser) {
+    playErrorBeep();
+    setDisplay('無效卡片', 'error');
+    showUserInfo('查無資料', '請洽管理員');
+    addLogToUI({ time, code: `${rawInput} (無效)`, className: 'st-exp' });
+    return;
+  }
+
+  const userLine = [validUser.name, validUser.gender, validUser.birth].filter(Boolean).join(' | ');
+  const idLine = validUser.id || '已找到會員資料';
+
+  if (isDuplicate) {
+    playDuplicateSound();
+    setDisplay('重複入場', 'warning');
+    showUserInfo(userLine || rawInput, idLine);
+    addLogToUI({ time, code: `${rawInput} (重複)`, className: 'st-warn' });
+    return;
+  }
+
+  playSuccessBeeps(1);
+  setDisplay('驗證通過', 'success');
+  showUserInfo(userLine || rawInput, idLine);
+
+  const record = { code: rawInput, time, fullTime, status: 'ok', className: 'st-ok' };
+  pushRecord(record, originalRaw);
+}
+
+function pushRecord(record, originalRaw) {
+  state.localHistory.unshift(record);
+  state.uploadQueue.push({
+    time: record.fullTime,
+    content: record.code,
+    raw: originalRaw || record.code,
+  });
+  saveToStorage();
+  addLogToUI(record);
+}
+
+function createLogRow(item) {
+  const div = document.createElement('div');
+  div.className = `log-row ${item.className || ''}`;
+  div.innerHTML = `
+    <div class="log-time">${escapeHtml(item.time || 'SYS')}</div>
+    <div class="log-data">${escapeHtml(item.code || '')}</div>
+  `;
+  return div;
+}
+
+function addLogToUI(item) {
+  if (!els.logList) return;
+  els.logList.prepend(createLogRow(item));
+}
+
+function addSystemLog(message, className = 'st-sys') {
+  addLogToUI({ time: 'SYS', code: message, className });
+}
+
+function renderLogList() {
+  if (!els.logList) return;
+  els.logList.innerHTML = '';
+  state.localHistory.forEach((item) => {
+    els.logList.appendChild(createLogRow(item));
+  });
+}
+
+function clearLogs() {
+  const ok = window.confirm('確定清除本機紀錄？這不會刪除雲端資料。');
+  if (!ok) return;
+  state.localHistory = [];
+  state.uploadQueue = [];
+  saveToStorage();
+  renderLogList();
+  addSystemLog('本機紀錄已清除');
+}
+
+function toggleHistoryView() {
+  els.body?.classList.toggle('history-mode');
+}
+
+function confirmKeyboard() {
+  closeKeyboardModal();
+  focusTrap();
+}
+
+function openKeyboardModal() {
+  els.keyboardModal?.classList.add('active');
+  els.keyboardModal?.setAttribute('aria-hidden', 'false');
+  els.keyboardTestInput?.focus();
+}
+
+function closeKeyboardModal() {
+  els.keyboardModal?.classList.remove('active');
+  els.keyboardModal?.setAttribute('aria-hidden', 'true');
+}
+
+function toggleBluetooth() {
+  if (state.isConnected) {
+    setConnectionState(false);
+    addSystemLog('藍牙已斷開');
+    return;
+  }
+  els.pairingModal?.classList.add('active');
+  els.pairingModal?.setAttribute('aria-hidden', 'false');
+}
+
+function closePairing() {
+  els.pairingModal?.classList.remove('active');
+  els.pairingModal?.setAttribute('aria-hidden', 'true');
+  focusTrap();
+}
+
+async function manualConnect() {
+  closePairing();
+  await setConnectionState(true);
+  addSystemLog('藍牙已配對');
+}
+
+async function setConnectionState(connected) {
+  state.isConnected = connected;
+  els.btStatusBtn?.classList.toggle('bt-connected', connected);
+  if (els.btText) els.btText.innerText = connected ? '已連線' : '未連線';
+
+  if (connected) {
+    setDisplay('LINKED', 'success');
+    await requestWakeLock();
+    window.setTimeout(() => {
+      if (els.displayValue?.textContent === 'LINKED') setDisplay('READY', 'waiting');
+    }, 1200);
+  } else {
+    releaseWakeLock();
+    setDisplay('READY', 'waiting');
+  }
+}
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    if (state.wakeLock) return;
+    state.wakeLock = await navigator.wakeLock.request('screen');
+    state.wakeLock.addEventListener?.('release', () => {
+      state.wakeLock = null;
+    });
+  } catch (error) {
+    console.warn('WakeLock failed', error);
+  }
+}
+
+async function releaseWakeLock() {
+  if (!state.wakeLock) return;
+  try {
+    await state.wakeLock.release();
+  } catch (error) {
+    console.warn('WakeLock release failed', error);
+  } finally {
+    state.wakeLock = null;
+  }
+}
+
+function handleScannerKeydown(event) {
+  if (els.keyboardModal?.classList.contains('active')) return;
+  if (els.pairingModal?.classList.contains('active')) return;
+
+  if (event.key === 'Enter') {
+    if (state.scanBuffer.length > 0) {
+      const finalValue = state.scanBuffer.trim();
+      state.scanBuffer = '';
+      clearTimeout(state.scanTimeout);
+      if (finalValue === 'GATELINK_PAIRING_ACTION') {
+        manualConnect();
+      } else {
+        handleScanInput(finalValue, 'keyboard');
       }
     }
+    return;
+  }
+
+  if (event.key.length === 1) {
+    state.scanBuffer += event.key;
+    clearTimeout(state.scanTimeout);
+    state.scanTimeout = window.setTimeout(() => {
+      state.scanBuffer = '';
+    }, 120);
+  }
+}
+
+function focusTrap() {
+  if (els.keyboardModal?.classList.contains('active')) return;
+  els.scanInputTrap?.focus({ preventScroll: true });
+}
+
+function openCamera() {
+  if (typeof window.Html5Qrcode === 'undefined') {
+    window.alert('QR 套件尚未載入，請重新整理後再試。');
+    return;
+  }
+
+  try {
+    if (els.qrFileInput) {
+      els.qrFileInput.value = '';
+      els.qrFileInput.click();
+    }
+  } catch (error) {
+    console.error('相機呼叫失敗', error);
+    reportClientError(`[相機喚醒失敗] ${error.message}`, error.stack || '');
+    window.alert('無法開啟相機。');
+  }
+}
+
+async function handleImageScan(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) {
+    focusTrap();
+    return;
+  }
+
+  if (typeof window.Html5Qrcode === 'undefined') {
+    window.alert('QR 套件尚未載入。');
+    focusTrap();
+    return;
+  }
+
+  setDisplay('解析中...', 'waiting');
+
+  try {
+    if (!state.html5Qrcode) {
+      const tempId = 'hidden-qr-reader';
+      let tempEl = document.getElementById(tempId);
+      if (!tempEl) {
+        tempEl = document.createElement('div');
+        tempEl.id = tempId;
+        tempEl.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;';
+        document.body.appendChild(tempEl);
+      }
+      state.html5Qrcode = new Html5Qrcode(tempId);
+    }
+
+    const decodedText = await state.html5Qrcode.scanFile(file, true);
+    handleScanInput(decodedText, 'camera');
+  } catch (error) {
+    console.warn('圖片解析失敗', error);
+    setDisplay('READY', 'waiting');
+    window.alert('無法辨識圖片中的 QR Code，請確認畫面清晰後再試。');
+  } finally {
+    if (els.qrFileInput) els.qrFileInput.value = '';
+    focusTrap();
+  }
+}
+
+function extractPrefix(code) {
+  const match = String(code || '').match(/^([A-Z]+)/i);
+  return match ? match[1].toUpperCase() : '';
+}
+
+function resolveSoundRule(prefix) {
+  const raw = state.localSoundRules[prefix];
+  if (!raw) return { sound: 1, name: '' };
+  if (typeof raw === 'number') return { sound: raw, name: '' };
+  return {
+    sound: Number(raw.sound || 1),
+    name: String(raw.name || ''),
   };
+}
 
-  function normalizeError(err) {
-    if (err instanceof Error) return err;
-    if (typeof err === 'string') return new Error(err);
-    return new Error(err && err.message ? err.message : JSON.stringify(err));
+function playDuplicateSound() {
+  beep(880, 100, 'square');
+  window.setTimeout(() => beep(440, 300, 'square'), 120);
+}
+
+function playSuccessBeeps(count) {
+  const total = Math.max(1, Number(count || 1));
+  const gap = 220;
+  for (let i = 0; i < total; i += 1) {
+    window.setTimeout(() => beep(900, 180, 'square'), i * gap);
   }
+}
 
-  function ensureAudioCtx() {
-    if (!audioCtx) {
-      const AudioCtor = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtor) return null;
-      audioCtx = new AudioCtor();
-    }
-    return audioCtx;
-  }
+function playErrorBeep() {
+  beep(440, 900, 'square');
+}
 
-  function beep(freq, duration, type = 'square') {
-    const ctx = ensureAudioCtx();
-    if (!ctx) return;
+let audioCtx;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
 
-    if (ctx.state === 'suspended') {
-      ctx.resume().catch(() => {});
-    }
+function beep(freq, duration, type = 'square') {
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
 
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-
     osc.type = type;
     osc.frequency.setValueAtTime(freq, ctx.currentTime);
-
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration / 1000);
-
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start();
     osc.stop(ctx.currentTime + duration / 1000);
+  } catch (error) {
+    console.warn('beep failed', error);
+  }
+}
+
+async function apiRequest(action, payload = {}, method = 'POST') {
+  const baseUrl = String(CONFIG.apiBaseUrl || '').trim();
+  if (!baseUrl || baseUrl.includes('PASTE_YOUR_APPS_SCRIPT_EXEC_URL_HERE')) {
+    throw new Error('尚未設定 Apps Script Web App URL');
   }
 
-  function playSuccessBeeps(count) {
-    const safeCount = Math.max(1, Number(count) || 1);
-    for (let i = 0; i < safeCount; i += 1) {
-      setTimeout(() => beep(900, 180, 'square'), i * 220);
-    }
-  }
-
-  function playDuplicateSound() {
-    beep(880, 100, 'square');
-    setTimeout(() => beep(440, 300, 'square'), 120);
-  }
-
-  function playErrorBeep() {
-    beep(440, 1200, 'square');
-  }
-
-  function sanitizeAutoSyncMinutes(value) {
-    const num = parseInt(value, 10);
-    if (Number.isNaN(num)) return 10;
-    return Math.min(Math.max(num, 1), 1440);
-  }
-
-  function applyAutoSyncInterval(minutes) {
-    const safeMinutes = sanitizeAutoSyncMinutes(minutes);
-    systemSettings.autoSyncMinutes = safeMinutes;
-
-    if (autoSyncTimer) clearInterval(autoSyncTimer);
-    autoSyncTimer = setInterval(autoSync, safeMinutes * 60 * 1000);
-  }
-
-  function todayKey() {
-    return new Date().toDateString();
-  }
-
-  function saveToStorage() {
-    localStorage.setItem('appLastRunDate', todayKey());
-    localStorage.setItem('localHistory', JSON.stringify(localHistory));
-    localStorage.setItem('uploadQueue', JSON.stringify(uploadQueue));
-    localStorage.setItem('localValidationDB', JSON.stringify(localValidationDB));
-    localStorage.setItem('localWhiteListRules', JSON.stringify(localWhiteListRules));
-    localStorage.setItem('localSoundRules', JSON.stringify(localSoundRules));
-    localStorage.setItem('systemSettings', JSON.stringify(systemSettings));
-  }
-
-  function loadFromStorage() {
-    try {
-      const lastRunDate = localStorage.getItem('appLastRunDate');
-
-      const storedSoundRules = localStorage.getItem('localSoundRules');
-      if (storedSoundRules) localSoundRules = JSON.parse(storedSoundRules);
-
-      const storedSettings = localStorage.getItem('systemSettings');
-      if (storedSettings) {
-        systemSettings = Object.assign(systemSettings, JSON.parse(storedSettings));
+  if (method === 'GET') {
+    const url = new URL(baseUrl);
+    url.searchParams.set('action', action);
+    Object.entries(payload || {}).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        url.searchParams.set(key, typeof value === 'string' ? value : JSON.stringify(value));
       }
+    });
+    const response = await fetch(url.toString(), { method: 'GET', redirect: 'follow' });
+    return handleApiResponse(response);
+  }
 
-      if (lastRunDate !== todayKey()) {
-        localHistory = [];
-        uploadQueue = [];
-      } else {
-        const hist = localStorage.getItem('localHistory');
-        const queue = localStorage.getItem('uploadQueue');
-        if (hist) localHistory = JSON.parse(hist);
-        if (queue) uploadQueue = JSON.parse(queue);
-      }
+  const response = await fetch(baseUrl, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8',
+    },
+    body: JSON.stringify({ action, payload }),
+  });
+  return handleApiResponse(response);
+}
 
-      const db = localStorage.getItem('localValidationDB');
-      if (db) localValidationDB = JSON.parse(db);
+async function handleApiResponse(response) {
+  const text = await response.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    throw new Error(`API 回應不是 JSON：${text.slice(0, 200)}`);
+  }
 
-      const rules = localStorage.getItem('localWhiteListRules');
-      if (rules) localWhiteListRules = JSON.parse(rules);
+  if (!response.ok) {
+    throw new Error(data && data.message ? data.message : `HTTP ${response.status}`);
+  }
 
+  if (data && data.ok === false) {
+    throw new Error(data.message || 'API 執行失敗');
+  }
+
+  return data;
+}
+
+async function performSystemCheck() {
+  try {
+    addSystemLog('正在檢查雲端路徑...');
+    const res = await apiRequest('ping', {}, 'GET');
+    addSystemLog(res.message || '雲端檢查完成', 'st-ok');
+  } catch (error) {
+    console.error(error);
+    addSystemLog(`路徑異常：${error.message}`, 'st-exp');
+    updateSyncStatus('路徑異常');
+  }
+}
+
+async function fetchSystemSettings() {
+  try {
+    const res = await apiRequest('getSystemSettings', {}, 'GET');
+    if (res.settings) {
+      state.systemSettings = Object.assign({}, state.systemSettings, res.settings);
+      applyAutoSyncInterval(state.systemSettings.autoSyncMinutes);
       saveToStorage();
-    } catch (err) {
-      console.error('Storage Error:', err);
-      server.log(`[Storage Error] ${err.message}`, err.stack || '');
     }
+  } catch (error) {
+    console.warn('讀取參數失敗', error);
   }
+}
 
-  function updateSyncStatus(text, blinking = false) {
-    $('syncText').innerText = text;
-    $('syncDot').classList.toggle('syncing', Boolean(blinking));
-  }
+function autoSync() {
+  if (state.uploadQueue.length === 0) return;
+  forceSync();
+}
 
-  function setDisplayState(state, message, subText = '') {
-    const displayCard = $('displayCard');
-    const displayValue = $('displayValue');
+async function forceSync() {
+  updateSyncStatus('同步中...', true);
+  const batch = [...state.uploadQueue];
 
-    displayCard.className = 'display-card';
-    if (state) displayCard.classList.add(state);
+  try {
+    const res = await apiRequest('syncTodayData', { records: batch }, 'POST');
 
-    if (subText) {
-      displayValue.innerHTML = '';
-      const main = document.createElement('div');
-      main.textContent = message;
-      const sub = document.createElement('div');
-      sub.className = 'ticket-subtitle';
-      sub.textContent = subText;
-      displayValue.append(main, sub);
-    } else {
-      displayValue.textContent = message;
-    }
-  }
-
-  function setUserInfo(line1 = '', line2 = '') {
-    const box = $('userInfoBox');
-    if (!line1 && !line2) {
-      box.style.display = 'none';
-      $('userInfoLine1').textContent = '--';
-      $('userInfoLine2').textContent = '--';
-      return;
-    }
-
-    $('userInfoLine1').textContent = line1;
-    $('userInfoLine2').textContent = line2;
-    box.style.display = 'block';
-  }
-
-  function addLogRow(targetList, item) {
-    const row = document.createElement('div');
-    row.className = `log-row ${item.className || ''}`.trim();
-
-    const time = document.createElement('div');
-    time.className = 'log-time';
-    time.textContent = item.time || '--:--:--';
-
-    const data = document.createElement('div');
-    data.className = 'log-data';
-    data.textContent = item.code || item.data || '';
-
-    row.append(time, data);
-    targetList.prepend(row);
-  }
-
-  function addLogToUI(item) {
-    addLogRow($('logList'), item);
-  }
-
-  function addSystemLog(status, message) {
-    let className = 'st-ok';
-    if (status === 'error') className = 'st-exp';
-    if (status === 'warning') className = 'st-warn';
-    addLogToUI({ time: 'SYS', code: message, className });
-  }
-
-  function renderLogList() {
-    const list = $('logList');
-    list.innerHTML = '';
-    localHistory.forEach((item) => {
-      const row = document.createElement('div');
-      row.className = `log-row ${item.className || ''}`.trim();
-
-      const time = document.createElement('div');
-      time.className = 'log-time';
-      time.textContent = item.time || '--:--:--';
-
-      const data = document.createElement('div');
-      data.className = 'log-data';
-      data.textContent = item.code || '';
-
-      row.append(time, data);
-      list.appendChild(row);
-    });
-  }
-
-  function clearLogs() {
-    if (!confirm('確定清除紀錄? (這不會刪除雲端資料)')) return;
-    localHistory = [];
-    uploadQueue = [];
-    saveToStorage();
-    renderLogList();
-    setDisplayState('', 'READY');
-    setUserInfo();
-  }
-
-  function maybeDecodeBase64(input) {
-    try {
-      const normalized = input.trim();
-      const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
-      if (
-        normalized.length > 0 &&
-        normalized.length % 4 === 0 &&
-        normalized.includes('=') &&
-        base64Regex.test(normalized)
-      ) {
-        const binary = atob(normalized);
-        const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-        return new TextDecoder('utf-8').decode(bytes);
-      }
-    } catch (err) {
-      return input;
-    }
-    return input;
-  }
-
-  function getNowRecordTime() {
-    return new Date().toLocaleTimeString('zh-TW', {
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  }
-
-  function getNowFullTime() {
-    return new Date().toLocaleString('zh-TW', { hour12: false });
-  }
-
-  function getTodayYYYYMMDD() {
-    const now = new Date();
-    return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-  }
-
-  function isValidationTarget(rawInput) {
-    return localWhiteListRules.some((rule) =>
-      rawInput.toUpperCase().startsWith(String(rule.prefix || '').toUpperCase()) &&
-      rawInput.length === Number(rule.length)
+    const syncedKeys = new Set(batch.map((item) => `${item.time}|${item.content}|${item.raw || ''}`));
+    state.uploadQueue = state.uploadQueue.filter(
+      (item) => !syncedKeys.has(`${item.time}|${item.content}|${item.raw || ''}`)
     );
-  }
 
-  function recordSuccess(code, originalRaw, nowTime, fullTimeStr, className = 'st-ok') {
-    const record = {
-      code,
-      time: nowTime,
-      fullTime: fullTimeStr,
-      status: 'ok',
-      className
-    };
+    if (Array.isArray(res.data)) {
+      state.localHistory = res.data.map((row) => ({
+        time: row[0] || '00:00:00',
+        code: row[1] || '',
+        status: 'ok',
+        className: 'st-ok',
+      }));
+    }
 
-    localHistory.unshift(record);
-    uploadQueue.push({ time: fullTimeStr, content: code, raw: originalRaw });
+    if (res.validation) state.localValidationDB = res.validation;
+    if (res.whitelist) state.localWhiteListRules = res.whitelist;
+    if (res.soundRules) state.localSoundRules = res.soundRules;
+    if (res.settings) {
+      state.systemSettings = Object.assign({}, state.systemSettings, res.settings);
+      applyAutoSyncInterval(state.systemSettings.autoSyncMinutes);
+    }
+
     saveToStorage();
-    addLogToUI(record);
-  }
-
-  function handleTicketRecord(rawInput, originalRaw, nowTime, fullTimeStr) {
-    const parts = rawInput.split(',');
-    const code = (parts[0] || '').trim();
-    const datePart = (parts[1] || '').trim();
-
-    if (!code) {
-      playErrorBeep();
-      setUserInfo();
-      setDisplayState('error', '格式錯誤');
-      addLogToUI({ time: nowTime, code: '票券格式錯誤', className: 'st-exp' });
-      return;
-    }
-
-    if (datePart && datePart !== getTodayYYYYMMDD()) {
-      playErrorBeep();
-      setUserInfo();
-      setDisplayState('error', `過期票 (${datePart})`);
-      addLogToUI({ time: nowTime, code: `${code} (過期)`, className: 'st-exp' });
-      return;
-    }
-
-    const isDuplicate = localHistory.some((item) => item.code === code && item.status === 'ok');
-    const match = code.match(/^([A-Z]+)/);
-    const prefix = match ? match[1] : '';
-    const rule = localSoundRules[prefix] || {};
-    const beepCount = Number(rule.sound) || 1;
-    const ticketTypeName = rule.name || '';
-
-    if (isDuplicate) {
-      playDuplicateSound();
-      setDisplayState('warning', '重複入場');
-      setUserInfo(ticketTypeName || prefix || '票券資料', '重複票券');
-      addLogToUI({ time: nowTime, code, className: 'st-warn' });
-      return;
-    }
-
-    playSuccessBeeps(beepCount);
-    setDisplayState('success', code, ticketTypeName);
-    if (ticketTypeName) {
-      setUserInfo(ticketTypeName, `嗶聲 ${beepCount} 次`);
-    } else {
-      setUserInfo();
-    }
-
-    recordSuccess(code, originalRaw, nowTime, fullTimeStr);
-  }
-
-  function handleValidationRecord(rawInput, originalRaw, nowTime, fullTimeStr) {
-    const validUser = localValidationDB[rawInput];
-    const isDuplicate = localHistory.some((item) => item.code === rawInput && item.status === 'ok');
-
-    if (!validUser) {
-      playErrorBeep();
-      setDisplayState('error', '無效卡片');
-      setUserInfo('查無資料', '請洽管理員');
-      addLogToUI({ time: nowTime, code: `${rawInput} (無效)`, className: 'st-exp' });
-      return;
-    }
-
-    const userLine1 = [validUser.name, validUser.gender, validUser.birth].filter(Boolean).join(' | ');
-    const userLine2 = validUser.id || '';
-
-    if (isDuplicate) {
-      playDuplicateSound();
-      setDisplayState('warning', '重複入場');
-      setUserInfo(userLine1 || '已驗證卡片', userLine2 || '重複入場');
-      addLogToUI({ time: nowTime, code: `${rawInput} (重複)`, className: 'st-warn' });
-      return;
-    }
-
-    playSuccessBeeps(1);
-    setDisplayState('success', '驗證通過');
-    setUserInfo(userLine1 || '驗證通過', userLine2);
-    recordSuccess(rawInput, originalRaw, nowTime, fullTimeStr);
-  }
-
-  function handleGenericRecord(rawInput, originalRaw, nowTime, fullTimeStr) {
-    playSuccessBeeps(1);
-    setDisplayState('success', rawInput);
-    setUserInfo();
-    recordSuccess(rawInput, originalRaw, nowTime, fullTimeStr);
-  }
-
-  function processLocalLogic(rawInput, originalRaw = rawInput) {
-    const nowTime = getNowRecordTime();
-    const fullTimeStr = getNowFullTime();
-
-    setUserInfo();
-
-    if (rawInput.includes(',')) {
-      handleTicketRecord(rawInput, originalRaw, nowTime, fullTimeStr);
-      return;
-    }
-
-    if (isValidationTarget(rawInput)) {
-      handleValidationRecord(rawInput, originalRaw, nowTime, fullTimeStr);
-      return;
-    }
-
-    handleGenericRecord(rawInput, originalRaw, nowTime, fullTimeStr);
-  }
-
-  function handleScanInput(data, source = 'keyboard') {
-    if (!data) return;
-
-    const trimmed = String(data).trim();
-    if (!trimmed) return;
-
-    if (source === 'keyboard' && /[^\x00-\x7F]/.test(trimmed)) {
-      setDisplayState('error', '輸入法錯誤!');
-      $('keyboard-modal').style.display = 'flex';
-      return;
-    }
-
-    const decodedData = maybeDecodeBase64(trimmed);
-    processLocalLogic(decodedData, trimmed);
-  }
-
-  async function fetchSystemSettings() {
-    if (!server.available()) {
-      updateSyncStatus('靜態模式');
-      return;
-    }
-
-    try {
-      const res = await server.call('getSystemSettings');
-      if (res && typeof res.autoSyncMinutes !== 'undefined') {
-        systemSettings.autoSyncMinutes = sanitizeAutoSyncMinutes(res.autoSyncMinutes);
-        saveToStorage();
-        applyAutoSyncInterval(systemSettings.autoSyncMinutes);
-      }
-    } catch (err) {
-      console.warn('讀取參數設置失敗，沿用目前同步間隔', err);
-      server.log(`[讀取參數失敗] ${err.message}`, err.stack || '');
-    }
-  }
-
-  async function performSystemCheck() {
-    if (!server.available()) {
-      addSystemLog('warning', '靜態模式：未連接 Apps Script');
-      updateSyncStatus('靜態模式');
-      return;
-    }
-
-    addSystemLog('warning', '正在檢查雲端路徑...');
-
-    try {
-      const res = await server.call('checkEnvironment');
-      if (res.status === 'success') {
-        addSystemLog('success', '路徑連接成功');
-      } else {
-        addSystemLog('error', res.msg || '路徑異常');
-        updateSyncStatus('路徑異常');
-      }
-    } catch (err) {
-      addSystemLog('error', '網路連線失敗');
-      updateSyncStatus('連線失敗');
-      server.log(`[環境檢查失敗] ${err.message}`, err.stack || '');
-    }
-  }
-
-  function mergeCloudHistory(rows) {
-    if (!Array.isArray(rows)) return;
-    localHistory = rows.map((row) => ({
-      time: row[0],
-      code: row[1],
-      status: 'ok',
-      className: 'st-ok',
-      statusText: '雲端'
-    }));
-  }
-
-  async function forceSync() {
-    if (!server.available()) {
-      updateSyncStatus('GitHub 模式');
-      addSystemLog('warning', '目前不在 Apps Script 內，無法同步雲端');
-      return;
-    }
-
-    updateSyncStatus('同步中...', true);
-    const batch = [...uploadQueue];
-
-    try {
-      const res = await server.call('syncTodayData', batch);
-
-      if (res.status !== 'success') {
-        updateSyncStatus('同步異常');
-        addSystemLog('error', res.msg || '同步失敗');
-        return;
-      }
-
-      const batchKeys = new Set(batch.map((b) => `${b.time}|${b.content}|${b.raw || ''}`));
-      uploadQueue = uploadQueue.filter((item) => !batchKeys.has(`${item.time}|${item.content}|${item.raw || ''}`));
-
-      if (Array.isArray(res.data) && res.data.length > 0) {
-        mergeCloudHistory(res.data);
-      }
-
-      if (res.validation) localValidationDB = res.validation;
-      if (res.whitelist) localWhiteListRules = res.whitelist;
-      if (res.soundRules) localSoundRules = res.soundRules;
-      if (res.settings) {
-        systemSettings = Object.assign(systemSettings, res.settings);
-        applyAutoSyncInterval(systemSettings.autoSyncMinutes);
-      }
-
-      saveToStorage();
-      renderLogList();
-      updateSyncStatus(res.msg || '同步完成');
-      setTimeout(() => updateSyncStatus('系統待機'), 3000);
-    } catch (err) {
-      updateSyncStatus('連線中斷');
-      addSystemLog('error', `同步失敗: ${err.message}`);
-      server.log(`[同步失敗] ${err.message}`, err.stack || '');
-    } finally {
-      $('syncDot').classList.remove('syncing');
-    }
-  }
-
-  function autoSync() {
-    if (uploadQueue.length === 0) return;
-    forceSync();
-  }
-
-  function toggleHistoryView() {
-    document.body.classList.toggle('history-mode');
-  }
-
-  function focusTrap() {
-    const trap = $('scanInputTrap');
-    if (trap) trap.focus();
-  }
-
-  function confirmKeyboard() {
-    $('keyboard-modal').style.display = 'none';
-    document.addEventListener('click', focusTrap);
-    setDisplayState('', 'READY');
-    focusTrap();
-  }
-
-  async function requestWakeLock() {
-    if (!('wakeLock' in navigator)) return;
-    try {
-      wakeLock = await navigator.wakeLock.request('screen');
-    } catch (_) {
-      wakeLock = null;
-    }
-  }
-
-  async function releaseWakeLock() {
-    if (!wakeLock) return;
-    try {
-      await wakeLock.release();
-    } catch (_) {
-      // ignore
-    } finally {
-      wakeLock = null;
-    }
-  }
-
-  function manualConnect() {
-    isConnectedState = true;
-    $('pairing-modal').style.display = 'none';
-    $('pairing-modal').classList.remove('active');
-    $('btStatusBtn').classList.add('bt-connected');
-    $('btText').innerText = '已連線';
-    setDisplayState('', 'LINKED');
-
-    setTimeout(() => {
-      if ($('displayValue').textContent === 'LINKED') {
-        setDisplayState('', 'READY');
-      }
-    }, 1500);
-
-    requestWakeLock();
-    setTimeout(() => {
-      document.addEventListener('click', focusTrap);
-      focusTrap();
-    }, 100);
-  }
-
-  async function setConnectionState(connected) {
-    isConnectedState = connected;
-    $('btStatusBtn').classList.toggle('bt-connected', connected);
-    $('btText').innerText = connected ? '已連線' : '未連線';
-
-    if (connected) {
-      setDisplayState('', 'LINKED');
-      setTimeout(() => {
-        if ($('displayValue').textContent === 'LINKED') {
-          setDisplayState('', 'READY');
-        }
-      }, 1000);
-      await requestWakeLock();
-    } else {
-      await releaseWakeLock();
-    }
-  }
-
-  function toggleBluetooth() {
-    if (!isConnectedState) {
-      $('pairing-modal').style.display = 'flex';
-      $('pairing-modal').classList.add('active');
-      document.removeEventListener('click', focusTrap);
-
-      setTimeout(() => {
-        const trap = $('scanInputTrap');
-        trap.value = '';
-        trap.focus();
-      }, 50);
-      return;
-    }
-
-    setConnectionState(false);
-  }
-
-  function openCamera() {
-    try {
-      const ctx = ensureAudioCtx();
-      if (ctx && ctx.state === 'suspended') {
-        ctx.resume().catch(() => {});
-      }
-
-      document.removeEventListener('click', focusTrap);
-      const fileInput = $('qr-file-input');
-      if (!fileInput) throw new Error('qr-file-input not found');
-      fileInput.click();
-    } catch (err) {
-      console.error('相機呼叫失敗:', err);
-      server.log(`[相機喚醒失敗] ${err.message}`, err.stack || '');
-      setDisplayState('error', '相機無法啟動');
-    }
-  }
-
-  function handleImageScan(event) {
-    const file = event.target.files && event.target.files[0];
-    if (!file) {
-      setTimeout(() => document.addEventListener('click', focusTrap), 200);
-      return;
-    }
-
-    setDisplayState('', '解析中...');
-
-    try {
-      if (!html5QrcodeScanner) {
-        html5QrcodeScanner = new Html5Qrcode('reader');
-      }
-
-      html5QrcodeScanner.scanFile(file, true)
-        .then((decodedText) => {
-          handleScanInput(decodedText, 'camera');
-          event.target.value = '';
-          setTimeout(() => document.addEventListener('click', focusTrap), 200);
-        })
-        .catch((err) => {
-          console.warn('圖片解析失敗:', err);
-          alert('⚠️ 無法辨識圖片中的 QR Code，請確認對焦清晰且無嚴重反光後重試。');
-          setDisplayState('', 'READY');
-          event.target.value = '';
-          setTimeout(() => document.addEventListener('click', focusTrap), 200);
-        });
-    } catch (err) {
-      console.error('相機掃碼初始化失敗:', err);
-      server.log(`[相機掃碼初始化失敗] ${err.message}`, err.stack || '');
-      setDisplayState('error', '相機初始化失敗');
-    }
-  }
-
-  function bindEvents() {
-    $('historyToggleHeader').addEventListener('click', toggleHistoryView);
-    $('btStatusBtn').addEventListener('click', (event) => {
-      event.stopPropagation();
-      toggleBluetooth();
-    });
-    $('openCameraBtn').addEventListener('click', (event) => {
-      event.stopPropagation();
-      openCamera();
-    });
-    $('historyBtn').addEventListener('click', toggleHistoryView);
-    $('syncBtn').addEventListener('click', forceSync);
-    $('reloadBtn').addEventListener('click', () => window.location.reload());
-    $('clearLogsBtn').addEventListener('click', clearLogs);
-    $('manualConnectBtn').addEventListener('click', manualConnect);
-    $('confirmKeyboardBtn').addEventListener('click', confirmKeyboard);
-    $('pairing-modal').addEventListener('click', focusTrap);
-    $('qr-file-input').addEventListener('change', handleImageScan);
-  }
-
-  function bindScannerKeyboard() {
-    document.addEventListener('keydown', (e) => {
-      if ($('pairing-modal').classList.contains('active')) return;
-
-      if (e.key === 'Enter') {
-        if (scanBuffer.length > 0) {
-          const finalValue = scanBuffer.trim();
-          scanBuffer = '';
-
-          if (finalValue === 'GATELINK_PAIRING_ACTION') {
-            manualConnect();
-          } else {
-            handleScanInput(finalValue);
-          }
-        }
-        return;
-      }
-
-      if (e.key.length === 1) {
-        scanBuffer += e.key;
-
-        clearTimeout(scanTimeout);
-        scanTimeout = setTimeout(() => {
-          scanBuffer = '';
-        }, 100);
-      }
-    });
-  }
-
-  function bindGlobalErrorLogging() {
-    window.onerror = function(message, source, lineno, colno, error) {
-      const errMsg = `[全域錯誤] ${message} (行: ${lineno})`;
-      const errStack = error ? error.stack : '';
-      console.error(errMsg, errStack);
-      server.log(errMsg, errStack);
-      return false;
-    };
-
-    window.addEventListener('unhandledrejection', (event) => {
-      const reason = normalizeError(event.reason);
-      const errMsg = `[Promise 錯誤] ${reason.message}`;
-      console.error(errMsg, reason.stack || '');
-      server.log(errMsg, reason.stack || '');
-    });
-  }
-
-  async function init() {
-    loadFromStorage();
     renderLogList();
-    bindEvents();
-    bindScannerKeyboard();
-    bindGlobalErrorLogging();
-    applyAutoSyncInterval(systemSettings.autoSyncMinutes);
-    updateSyncStatus('待機中');
-    await performSystemCheck();
-    await fetchSystemSettings();
-
-    if (
-      Object.keys(localValidationDB).length === 0 ||
-      Object.keys(localSoundRules).length === 0 ||
-      localWhiteListRules.length === 0
-    ) {
-      forceSync();
-    }
+    updateSyncStatus(res.message || '同步完成');
+    window.setTimeout(() => updateSyncStatus('系統待機'), 3000);
+  } catch (error) {
+    console.error(error);
+    updateSyncStatus('同步失敗');
+    addSystemLog(`同步失敗：${error.message}`, 'st-exp');
+  } finally {
+    updateSyncStatus(els.syncText?.innerText || '系統待機', false);
   }
+}
 
-  window.toggleHistoryView = toggleHistoryView;
-  window.forceSync = forceSync;
-  window.confirmKeyboard = confirmKeyboard;
-  window.manualConnect = manualConnect;
-  window.openCamera = openCamera;
-  window.handleImageScan = handleImageScan;
-  window.clearLogs = clearLogs;
-  window.handleScanInput = handleScanInput;
+async function reportClientError(message, stack = '') {
+  console.error(message, stack);
+  try {
+    await apiRequest('logClientError', { message, stack }, 'POST');
+  } catch (error) {
+    console.warn('上報錯誤失敗', error);
+  }
+}
 
-  document.addEventListener('DOMContentLoaded', init);
-})();
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
