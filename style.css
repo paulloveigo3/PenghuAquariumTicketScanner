@@ -17,21 +17,31 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-  min-height: 100%;
+html {
+  height: 100%;
+  width: 100%;
 }
 
 body {
+  margin: 0;
+  padding: 0;
   background-color: var(--bg-color);
   color: var(--text-main);
   font-family: 'Noto Sans TC', sans-serif;
-  height: 100vh;
+
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  max-width: 100%;
+
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-text-size-adjust: 100%;
+
+  transition: all 0.3s;
 }
 
 body.history-mode .main-container {
@@ -56,13 +66,14 @@ button {
 }
 
 .header {
-  padding: 15px 20px;
+  padding: calc(15px + env(safe-area-inset-top, 0px)) 20px 15px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: var(--card-bg);
   border-bottom: 1px solid var(--glass-border);
   z-index: 20;
+  width: 100%;
 }
 
 .app-title {
@@ -134,11 +145,14 @@ button {
 }
 
 .main-container {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   padding: 20px;
   gap: 15px;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
   overflow: hidden;
 }
 
@@ -170,6 +184,7 @@ button {
   font-weight: 700;
   text-align: center;
   word-break: break-word;
+  overflow-wrap: anywhere;
   color: var(--text-main);
   line-height: 1.2;
 }
@@ -215,12 +230,17 @@ button {
 }
 
 .log-container {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   background: var(--card-bg);
   border-radius: 16px;
   padding: 15px;
   overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--glass-border);
+  width: 100%;
+  max-width: 100%;
 }
 
 .log-title {
@@ -245,6 +265,7 @@ button {
   height: 8px;
   border-radius: 50%;
   background: #555;
+  flex: 0 0 auto;
 }
 
 .sync-dot.syncing {
@@ -262,6 +283,7 @@ button {
   display: flex;
   flex-direction: column;
   gap: 0;
+  width: 100%;
 }
 
 .log-row {
@@ -288,6 +310,7 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 
 .log-row.st-ok .log-data,
@@ -310,13 +333,14 @@ button {
 }
 
 .footer {
-  padding: 15px 20px 25px;
+  padding: 15px 20px calc(25px + env(safe-area-inset-bottom, 12px)) 20px;
   background: var(--card-bg);
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 15px;
   border-top: 1px solid var(--glass-border);
   z-index: 20;
+  width: 100%;
 }
 
 .action-btn {
@@ -331,6 +355,7 @@ button {
   justify-content: center;
   cursor: pointer;
   transition: transform 0.15s ease, background 0.15s ease;
+  min-height: 74px;
 }
 
 .action-btn:active,
@@ -375,7 +400,11 @@ button {
   justify-content: center;
   z-index: 300;
   background: rgba(0, 0, 0, 0.88);
-  padding: 20px;
+  padding:
+    calc(20px + env(safe-area-inset-top, 0px))
+    20px
+    calc(20px + env(safe-area-inset-bottom, 0px))
+    20px;
 }
 
 .modal.active {
@@ -390,6 +419,9 @@ button {
   text-align: center;
   width: min(100%, 380px);
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+  max-height: calc(100dvh - 80px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .pairing-img {
@@ -464,12 +496,24 @@ button {
 }
 
 @media (max-width: 600px) {
+  .header {
+    padding:
+      calc(12px + env(safe-area-inset-top, 0px))
+      14px
+      12px
+      14px;
+  }
+
   .main-container {
     padding: 14px;
   }
 
   .footer {
-    padding: 12px 14px 18px;
+    padding:
+      12px
+      14px
+      calc(18px + env(safe-area-inset-bottom, 12px))
+      14px;
     gap: 10px;
   }
 
@@ -483,5 +527,9 @@ button {
 
   .log-data {
     font-size: 0.88rem;
+  }
+
+  .action-btn {
+    min-height: 68px;
   }
 }
