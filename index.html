@@ -4,104 +4,100 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>QR Code 智能驗票系統</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Roboto+Mono:wght@400;700&family=Material+Icons+Round&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
   <script src="https://unpkg.com/html5-qrcode" defer></script>
-  <script src="app.js" defer></script>
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <div class="header" id="historyToggleHeader">
+  <div class="header" id="headerBar">
     <div class="app-title">
       前台過票系統
-      <span class="version-badge">v2.1</span>
+      <span class="version-tag">v3.0</span>
     </div>
-
     <div class="header-controls">
-      <div class="bt-status" id="btStatusBtn" role="button" tabindex="0" aria-label="藍牙配對">
+      <button class="bt-status" id="btStatusBtn" type="button" aria-label="藍牙連線狀態">
         <span class="material-icons-round bt-icon">bluetooth</span>
         <span id="btText">未連線</span>
-        <div class="status-dot"></div>
-      </div>
-
-      <div class="cam-btn" id="openCameraBtn" role="button" tabindex="0" aria-label="開啟相機">
+        <span class="status-dot" aria-hidden="true"></span>
+      </button>
+      <button class="cam-btn" id="cameraBtn" type="button" aria-label="開啟相機">
         <span class="material-icons-round">qr_code_scanner</span>
-      </div>
+      </button>
     </div>
   </div>
 
-  <div class="main-container">
-    <div class="display-card" id="displayCard">
+  <main class="main-container">
+    <section class="display-card waiting" id="displayCard">
       <div class="display-label">掃描結果</div>
       <div class="display-value" id="displayValue">READY</div>
 
-      <div class="user-info-box" id="userInfoBox">
+      <div class="user-info-box" id="userInfoBox" hidden>
         <div class="info-line" id="userInfoLine1">--</div>
         <div class="info-line sub" id="userInfoLine2">--</div>
       </div>
-    </div>
+    </section>
 
-    <div class="log-container">
+    <section class="log-container">
       <div class="log-title">
         <span>SESSION LOG</span>
-
         <div class="sync-status">
           <div class="sync-dot" id="syncDot"></div>
           <span id="syncText">待機中</span>
         </div>
-
-        <span class="material-icons-round log-delete-btn" id="clearLogsBtn">delete_sweep</span>
+        <button class="icon-btn" id="clearLogsBtn" type="button" aria-label="清除紀錄">
+          <span class="material-icons-round">delete_sweep</span>
+        </button>
       </div>
-
       <div class="log-list" id="logList"></div>
-    </div>
-  </div>
+    </section>
+  </main>
 
-  <div class="footer">
-    <div class="action-btn" id="historyBtn">
+  <footer class="footer">
+    <button class="action-btn" id="historyBtn" type="button">
       <span class="material-icons-round">history</span>
       <div>歷史</div>
-    </div>
-
-    <div class="action-btn btn-upload" id="syncBtn">
+    </button>
+    <button class="action-btn btn-upload" id="syncBtn" type="button">
       <span class="material-icons-round">cloud_upload</span>
       <div>同步</div>
-    </div>
-
-    <div class="action-btn" id="reloadBtn">
+    </button>
+    <button class="action-btn" id="reloadBtn" type="button">
       <span class="material-icons-round">refresh</span>
       <div>重整</div>
-    </div>
-  </div>
+    </button>
+  </footer>
 
-  <input type="text" id="scanInputTrap" readonly autocomplete="off">
-  <input id="qr-file-input" type="file" accept="image/*" capture="environment">
-  <div id="reader" aria-hidden="true"></div>
+  <input id="scanInputTrap" type="text" readonly autocomplete="off" />
+  <input id="qr-file-input" type="file" accept="image/*" capture="environment" hidden />
 
-  <div id="pairing-modal">
+  <div id="pairing-modal" class="modal" aria-hidden="true">
     <div class="pairing-box">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=GATELINK_PAIRING_ACTION" class="pairing-img" alt="配對 QRCode">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=GATELINK_PAIRING_ACTION" class="pairing-img" alt="配對 QR Code">
       <div class="pairing-text">請掃描此碼確認連線</div>
-      <div style="font-size:0.8rem; color:#666; margin-top:5px;">(掃描後將自動跳轉)</div>
-      <button class="modal-secondary-btn" id="manualConnectBtn">手動強制連線</button>
+      <div class="pairing-sub">掃描後將自動完成配對</div>
+      <button class="primary-btn" id="manualConnectBtn" type="button">手動強制連線</button>
+      <button class="secondary-btn" id="closePairingBtn" type="button">取消</button>
     </div>
   </div>
 
-  <div id="keyboard-modal" style="display:flex;">
-    <div class="pairing-box">
-      <span class="material-icons-round" style="font-size: 4rem; color: #FFD700;">keyboard_alt</span>
-      <div class="pairing-text">⚠️ 輸入法檢查</div>
+  <div id="keyboard-modal" class="modal active" aria-hidden="false">
+    <div class="pairing-box keyboard-box">
+      <span class="material-icons-round keyboard-icon">keyboard_alt</span>
+      <div class="pairing-text">輸入法檢查</div>
       <div class="pairing-sub">
-        請切換至<b>英文 (US)</b><br>
-        <span style="color: #FF5252;">若使用注音，掃描將會失敗。</span>
+        請切換至 <b>英文 (US)</b><br>
+        若使用注音，掃描可能失敗。
       </div>
-
-      <div class="test-input-wrap">
-        <label for="keyboardTestInput">點擊下方框框試打 (確認無注音)</label>
-        <input id="keyboardTestInput" type="text" placeholder="試打區 (例如按 A 不會變 ㄇ)">
+      <div class="keyboard-test-box">
+        <div class="keyboard-test-label">點擊下方框框試打，確認按 A 不會輸入 ㄇ</div>
+        <input type="text" id="keyboardTestInput" placeholder="試打區" />
       </div>
-
-      <button class="modal-primary-btn" id="confirmKeyboardBtn">已切換英文，開始作業</button>
+      <button class="primary-btn" id="confirmKeyboardBtn" type="button">已切換英文，開始作業</button>
     </div>
   </div>
+
+  <script src="./app.js" defer></script>
 </body>
 </html>
