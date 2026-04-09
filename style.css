@@ -9,6 +9,7 @@
   --text-sub: #b0b0b0;
   --glass: rgba(255, 255, 255, 0.08);
   --glass-border: rgba(255, 255, 255, 0.1);
+  --muted: #7e7e7e;
 }
 
 * {
@@ -20,17 +21,17 @@ html,
 body {
   margin: 0;
   padding: 0;
-  height: 100%;
+  min-height: 100%;
 }
 
 body {
   background-color: var(--bg-color);
   color: var(--text-main);
   font-family: 'Noto Sans TC', sans-serif;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: all 0.3s;
 }
 
 body.history-mode .main-container {
@@ -43,7 +44,15 @@ body.history-mode .display-card {
 
 body.history-mode .log-container {
   height: 100%;
-  border-top: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  border: 0;
 }
 
 .header {
@@ -54,7 +63,6 @@ body.history-mode .log-container {
   background: var(--card-bg);
   border-bottom: 1px solid var(--glass-border);
   z-index: 20;
-  cursor: pointer;
 }
 
 .app-title {
@@ -63,7 +71,9 @@ body.history-mode .log-container {
   letter-spacing: 1px;
 }
 
-.version-badge {
+.version-tag {
+  display: inline-block;
+  margin-left: 8px;
   font-size: 0.7rem;
   color: var(--success);
   border: 1px solid var(--success);
@@ -77,16 +87,22 @@ body.history-mode .log-container {
   align-items: center;
 }
 
+.bt-status,
+.cam-btn,
+.icon-btn {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  color: var(--text-main);
+  cursor: pointer;
+}
+
 .bt-status {
   display: flex;
   align-items: center;
-  background: var(--glass);
   padding: 6px 12px;
   border-radius: 20px;
-  border: 1px solid var(--glass-border);
   font-size: 0.8rem;
-  cursor: pointer;
-  transition: 0.3s;
+  min-height: 36px;
 }
 
 .bt-icon {
@@ -107,21 +123,14 @@ body.history-mode .log-container {
   box-shadow: 0 0 6px var(--success);
 }
 
-.cam-btn {
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  color: var(--text-main);
+.cam-btn,
+.icon-btn {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-}
-
-.cam-btn:active {
-  background: rgba(255, 255, 255, 0.2);
 }
 
 .main-container {
@@ -131,7 +140,6 @@ body.history-mode .log-container {
   padding: 20px;
   gap: 15px;
   overflow: hidden;
-  transition: all 0.3s;
 }
 
 .display-card {
@@ -146,7 +154,7 @@ body.history-mode .log-container {
   border: 1px solid var(--glass-border);
   min-height: 140px;
   position: relative;
-  transition: all 0.3s;
+  transition: all 0.2s ease;
 }
 
 .display-label {
@@ -161,16 +169,9 @@ body.history-mode .log-container {
   font-size: 2rem;
   font-weight: 700;
   text-align: center;
-  word-break: break-all;
+  word-break: break-word;
   color: var(--text-main);
   line-height: 1.2;
-}
-
-.ticket-subtitle {
-  font-size: 1rem;
-  color: #aaa;
-  margin-top: 5px;
-  font-weight: 500;
 }
 
 .user-info-box {
@@ -180,7 +181,6 @@ body.history-mode .log-container {
   border-radius: 8px;
   padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.05);
-  display: none;
 }
 
 .info-line {
@@ -189,13 +189,14 @@ body.history-mode .log-container {
   margin-bottom: 4px;
   text-align: center;
   font-weight: 500;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
 }
 
 .info-line.sub {
   font-size: 0.85rem;
   color: #aaa;
   font-family: 'Roboto Mono', monospace;
+  margin-bottom: 0;
 }
 
 .display-card.success {
@@ -226,10 +227,10 @@ body.history-mode .log-container {
   font-size: 0.8rem;
   color: var(--text-sub);
   margin-bottom: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
   gap: 12px;
+  align-items: center;
 }
 
 .sync-status {
@@ -265,9 +266,9 @@ body.history-mode .log-container {
 
 .log-row {
   display: grid;
-  grid-template-columns: 85px 1fr;
-  gap: 15px;
-  padding: 10px 5px;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 4px;
   border-bottom: 1px solid #333;
   align-items: center;
 }
@@ -275,30 +276,37 @@ body.history-mode .log-container {
 .log-time {
   color: #888;
   font-family: 'Roboto Mono', monospace;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   text-align: left;
 }
 
 .log-data {
   color: var(--text-main);
   font-family: 'Roboto Mono', monospace;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.log-row.st-ok .log-data {
+.log-row.st-ok .log-data,
+.st-ok {
   color: var(--success);
 }
 
-.log-row.st-warn .log-data {
+.log-row.st-warn .log-data,
+.st-warn {
   color: var(--warning);
 }
 
-.log-row.st-exp .log-data {
+.log-row.st-exp .log-data,
+.st-exp {
   color: var(--error);
+}
+
+.log-row.st-sys .log-data {
+  color: #d0d0d0;
 }
 
 .footer {
@@ -322,12 +330,16 @@ body.history-mode .log-container {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: 0.2s;
+  transition: transform 0.15s ease, background 0.15s ease;
 }
 
-.action-btn:active {
-  transform: scale(0.95);
-  background: rgba(255, 255, 255, 0.1);
+.action-btn:active,
+.bt-status:active,
+.cam-btn:active,
+.icon-btn:active,
+.primary-btn:active,
+.secondary-btn:active {
+  transform: scale(0.97);
 }
 
 .action-btn span {
@@ -346,89 +358,70 @@ body.history-mode .log-container {
   border-color: rgba(108, 99, 255, 0.3);
 }
 
-#pairing-modal,
-#keyboard-modal {
+#scanInputTrap {
+  position: absolute;
+  top: -1000px;
+  left: -1000px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal {
   position: fixed;
   inset: 0;
   display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-}
-
-#pairing-modal {
-  background: rgba(0, 0, 0, 0.85);
-  z-index: 200;
-}
-
-#pairing-modal.active {
-  display: flex;
-}
-
-#keyboard-modal {
-  background: rgba(0, 0, 0, 0.9);
   z-index: 300;
+  background: rgba(0, 0, 0, 0.88);
+  padding: 20px;
+}
+
+.modal.active {
+  display: flex;
 }
 
 .pairing-box {
   background: #fff;
+  color: #000;
   padding: 20px;
   border-radius: 16px;
   text-align: center;
-  color: #000;
-  max-width: 80%;
-  width: min(420px, 88vw);
+  width: min(100%, 380px);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
 }
 
 .pairing-img {
   width: 200px;
   height: 200px;
+  object-fit: contain;
   margin-bottom: 10px;
 }
 
 .pairing-text {
+  font-size: 1.1rem;
   font-weight: 700;
+  margin-bottom: 8px;
 }
 
 .pairing-sub {
-  margin: 10px 0;
+  font-size: 0.9rem;
   color: #555;
+  margin-bottom: 16px;
+  line-height: 1.5;
 }
 
-.modal-primary-btn {
-  width: 100%;
-  padding: 12px;
-  background: #6c63ff;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
+.keyboard-box {
+  max-width: 420px;
 }
 
-.modal-secondary-btn {
-  margin-top: 15px;
-  padding: 10px 20px;
-  background: #6c63ff;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
+.keyboard-icon {
+  font-size: 4rem;
+  color: #ffd700;
 }
 
-#scanInputTrap {
-  position: absolute;
-  top: -1000px;
-  left: -1000px;
-  opacity: 0;
-}
-
-#qr-file-input,
-#reader {
-  display: none;
-}
-
-.test-input-wrap {
+.keyboard-test-box {
   margin: 15px 0;
   background: #f5f5f5;
   padding: 10px;
@@ -436,14 +429,13 @@ body.history-mode .log-container {
   text-align: left;
 }
 
-.test-input-wrap label {
+.keyboard-test-label {
   font-size: 0.8rem;
   color: #555;
   margin-bottom: 5px;
-  display: block;
 }
 
-.test-input-wrap input {
+#keyboardTestInput {
   width: 100%;
   padding: 8px;
   border: 1px solid #ccc;
@@ -451,19 +443,34 @@ body.history-mode .log-container {
   font-size: 1rem;
 }
 
-.log-delete-btn {
-  font-size: 1rem;
+.primary-btn,
+.secondary-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 700;
   cursor: pointer;
 }
 
-@media (max-width: 480px) {
+.primary-btn {
+  background: var(--primary);
+  color: white;
+}
+
+.secondary-btn {
+  margin-top: 10px;
+  background: #ececec;
+  color: #333;
+}
+
+@media (max-width: 600px) {
   .main-container {
     padding: 14px;
   }
 
   .footer {
-    gap: 10px;
     padding: 12px 14px 18px;
+    gap: 10px;
   }
 
   .display-value {
@@ -471,7 +478,10 @@ body.history-mode .log-container {
   }
 
   .log-row {
-    grid-template-columns: 74px 1fr;
-    gap: 10px;
+    grid-template-columns: 82px minmax(0, 1fr);
+  }
+
+  .log-data {
+    font-size: 0.88rem;
   }
 }
