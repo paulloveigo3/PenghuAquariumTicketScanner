@@ -71,7 +71,21 @@
   </footer>
 
   <input id="scanInputTrap" type="text" readonly autocomplete="off" />
-  <input id="qr-file-input" type="file" accept="image/*" capture="environment" hidden />
+
+  <div id="scanner-modal" class="modal scanner-modal" aria-hidden="true">
+    <div class="scanner-shell">
+      <div class="scanner-topbar">
+        <div class="scanner-title">請將 QR Code 對準框內</div>
+        <button class="icon-btn scanner-close-btn" id="closeScannerBtn" type="button" aria-label="關閉掃描器">
+          <span class="material-icons-round">close</span>
+        </button>
+      </div>
+      <div class="scanner-reader-wrap">
+        <div id="qr-reader" class="qr-reader"></div>
+      </div>
+      <div class="scanner-hint">掃描成功後會自動返回主畫面並驗證</div>
+    </div>
+  </div>
 
   <div id="pairing-modal" class="modal" aria-hidden="true">
     <div class="pairing-box">
