@@ -1,5 +1,5 @@
 const CONFIG = {
-  apiBaseUrl: 'https://script.google.com/macros/s/AKfycbzVsZ1uqmAE2xsfsQoTgU5aHeEW5ng7lWMqfFN0KwphrmopfM0E6d_fuMympYgLWBPl2g/exec',
+  apiBaseUrl: 'https://script.google.com/macros/s/AKfycbxTdJJHI6vWBVZfh0--NOyd4Sn3Jyu8_-6EBkNezlSbm9nwjrpRVZuDFG9-pJ37wTEnMw/exec',
   storagePrefix: 'ticketScanner_v3',
   defaultAutoSyncMinutes: 10,
   timezone: 'Asia/Taipei',
@@ -27,6 +27,10 @@ const state = {
   scannerStatusEl: null,
   scannerRunning: false,
   cameraLocked: false,
+
+  accessGranted: false,
+  entryMode: '',
+  desktopUser: null,
 };
 
 const els = {};
@@ -44,8 +48,10 @@ function init() {
   hideUserInfo();
   setDisplay('READY', 'waiting');
   addSystemLog('前端已啟動');
-  focusTrap();
   state.uiReady = true;
+
+  closeKeyboardModal();
+  openEntrySelection();
 
   performSystemCheck();
   fetchSystemSettings();
@@ -85,6 +91,17 @@ function cacheDom() {
   els.keyboardModal = document.getElementById('keyboard-modal');
   els.confirmKeyboardBtn = document.getElementById('confirmKeyboardBtn');
   els.keyboardTestInput = document.getElementById('keyboardTestInput');
+
+  els.entryModal = document.getElementById('entry-modal');
+  els.entrySelectPage = document.getElementById('entrySelectPage');
+  els.entryDesktopPage = document.getElementById('entryDesktopPage');
+  els.enterMobileBtn = document.getElementById('enterMobileBtn');
+  els.enterDesktopBtn = document.getElementById('enterDesktopBtn');
+  els.entryBackBtn = document.getElementById('entryBackBtn');
+  els.desktopLoginBtn = document.getElementById('desktopLoginBtn');
+  els.desktopAccountInput = document.getElementById('desktopAccountInput');
+  els.desktopPasswordInput = document.getElementById('desktopPasswordInput');
+  els.entryMessage = document.getElementById('entryMessage');
 }
 
 function ensureScannerModal() {
@@ -139,6 +156,13 @@ function bindEvents() {
   els.confirmKeyboardBtn?.addEventListener('click', confirmKeyboard);
   els.qrFileInput?.addEventListener('change', handleImageScan);
 
+  els.enterMobileBtn?.addEventListener('click', continueAsMobile);
+  els.enterDesktopBtn?.addEventListener('click', showDesktopLoginForm);
+  els.entryBackBtn?.addEventListener('click', backToEntrySelection);
+  els.desktopLoginBtn?.addEventListener('click', submitDesktopLogin);
+  els.desktopAccountInput?.addEventListener('keydown', handleDesktopLoginEnter);
+  els.desktopPasswordInput?.addEventListener('keydown', handleDesktopLoginEnter);
+
   state.scannerCloseBtnEl?.addEventListener('click', closeCameraScanner);
 
   document.addEventListener('keydown', handleScannerKeydown);
@@ -169,6 +193,7 @@ function bindEvents() {
 }
 
 function handleDocumentClick(event) {
+  if (els.entryModal?.classList.contains('active')) return;
   if (els.keyboardModal?.classList.contains('active')) return;
   if (els.pairingModal?.classList.contains('active')) return;
   if (state.scannerModalEl?.classList.contains('active')) return;
@@ -561,6 +586,98 @@ function closeKeyboardModal() {
   els.keyboardModal?.setAttribute('aria-hidden', 'true');
 }
 
+function openEntrySelection() {
+  if (!els.entryModal) return;
+
+  els.entryModal.classList.add('active');
+  els.entryModal.setAttribute('aria-hidden', 'false');
+
+  showEntryPage('select');
+  setEntryMessage('');
+
+  if (els.desktopAccountInput) els.desktopAccountInput.value = '';
+  if (els.desktopPasswordInput) els.desktopPasswordInput.value = '';
+
+  els.enterMobileBtn?.focus();
+}
+
+function showDesktopLoginForm() {
+  showEntryPage('desktop');
+  setEntryMessage('');
+  window.setTimeout(() => {
+    els.desktopAccountInput?.focus();
+  }, 30);
+}
+
+function backToEntrySelection() {
+  showEntryPage('select');
+  setEntryMessage('');
+}
+
+function showEntryPage(page) {
+  if (els.entrySelectPage) {
+    els.entrySelectPage.hidden = page !== 'select';
+  }
+  if (els.entryDesktopPage) {
+    els.entryDesktopPage.hidden = page !== 'desktop';
+  }
+}
+
+function closeEntryModal() {
+  els.entryModal?.classList.remove('active');
+  els.entryModal?.setAttribute('aria-hidden', 'true');
+}
+
+function setEntryMessage(message, type = '') {
+  if (!els.entryMessage) return;
+  els.entryMessage.textContent = message || '';
+  els.entryMessage.className = 'entry-message';
+  if (type) els.entryMessage.classList.add(type);
+}
+
+function grantAccess(mode, user) {
+  state.accessGranted = true;
+  state.entryMode = mode || '';
+  state.desktopUser = user || null;
+}
+
+function continueAsMobile() {
+  grantAccess('mobile', null);
+  closeEntryModal();
+  openKeyboardModal();
+}
+
+function handleDesktopLoginEnter(event) {
+  if (event.key === 'Enter') {
+    submitDesktopLogin();
+  }
+}
+
+async function submitDesktopLogin() {
+  const account = String(els.desktopAccountInput?.value || '').trim();
+  const password = String(els.desktopPasswordInput?.value || '').trim();
+
+  if (!account || !password) {
+    setEntryMessage('請輸入帳號與密碼', 'error');
+    return;
+  }
+
+  if (els.desktopLoginBtn) els.desktopLoginBtn.disabled = true;
+  setEntryMessage('登入中...');
+
+  try {
+    const res = await apiRequest('loginFrontDesk', { account, password }, 'POST');
+    grantAccess('desktop', res.user || { account: account, name: account });
+    closeEntryModal();
+    addSystemLog('桌機登入成功：' + ((res.user && res.user.name) || account), 'st-ok');
+    openKeyboardModal();
+  } catch (error) {
+    setEntryMessage(error.message || '登入失敗', 'error');
+  } finally {
+    if (els.desktopLoginBtn) els.desktopLoginBtn.disabled = false;
+  }
+}
+
 function toggleBluetooth() {
   if (state.isConnected) {
     setConnectionState(false);
@@ -625,6 +742,7 @@ async function releaseWakeLock() {
 }
 
 function handleScannerKeydown(event) {
+  if (!state.accessGranted) return;
   if (els.keyboardModal?.classList.contains('active')) return;
   if (els.pairingModal?.classList.contains('active')) return;
   if (state.scannerRunning) return;
@@ -653,12 +771,18 @@ function handleScannerKeydown(event) {
 }
 
 function focusTrap() {
+  if (!state.accessGranted) return;
+  if (els.entryModal?.classList.contains('active')) return;
   if (els.keyboardModal?.classList.contains('active')) return;
   if (state.scannerRunning) return;
   els.scanInputTrap?.focus({ preventScroll: true });
 }
 
 async function openCamera() {
+  if (!state.accessGranted) {
+    openEntrySelection();
+    return;
+  }
   if (typeof window.Html5Qrcode === 'undefined') {
     window.alert('QR 套件尚未載入，請重新整理後再試。');
     return;
