@@ -419,7 +419,7 @@ function restoreRangeAnchorIfNeeded() {
     showUserInfo(anchor.ticketTypeName, '驗證通過');
   } else {
     setDisplay(anchor.parsed.code, 'success');
-    showUserInfo(anchor.parsed.sequence?.prefix || 'TICKET', '驗證通過');
+    showUserInfo(anchor.parsed.sequence?.prefix || '', '驗證通過');
   }
 }
 
@@ -472,10 +472,7 @@ function handleDisplayCardRangeClick() {
     '連號模式已啟用，請直接掃最後一張',
     'success'
   );
-  showUserInfo(
-    state.rangeAnchor.ticketTypeName || state.rangeAnchor.parsed.sequence?.prefix || 'TICKET',
-    '等待最後一張'
-  );
+ showUserInfo(' ', '等待最後一張');
   addSystemLog(`連號模式啟用：${state.rangeAnchor.parsed.code}`);
   focusTrap();
 }
@@ -586,18 +583,15 @@ function handleRangeClosingScan(currentParsed, time, fullTime) {
     `共${count}張${ticketTypeName ? ` ｜ ${ticketTypeName}` : ''}`,
     'success'
   );
-  showUserInfo(
-    ticketTypeName || anchor.parsed.sequence.prefix || 'TICKET',
-    `連號完成｜共${count}張`
-  );
+  showUserInfo(' ', `連號完成｜共${count}張`);
 
   return true;
 }
 
 function showUserInfo(line1, line2) {
   if (!els.userInfoBox) return;
-  els.userInfoLine1.innerText = line1 || '--';
-  els.userInfoLine2.innerText = line2 || '--';
+  els.userInfoLine1.innerText = line1 == null ? '--' : line1;
+  els.userInfoLine2.innerText = line2 == null ? '--' : line2;
   els.userInfoBox.hidden = false;
 }
 
