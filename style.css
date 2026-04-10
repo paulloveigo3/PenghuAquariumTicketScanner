@@ -658,3 +658,144 @@ button {
     font-size: 0.92rem;
   }
 }
+
+.entry-modal {
+  z-index: 520;
+  background: rgba(0, 0, 0, 0.92);
+}
+
+.entry-shell {
+  width: min(100%, 420px);
+  background: linear-gradient(145deg, #242424, #1c1c1c);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  padding: 22px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
+}
+
+.entry-page[hidden] {
+  display: none !important;
+}
+
+.entry-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 8px;
+  color: var(--text-main);
+}
+
+.entry-subtitle {
+  font-size: 0.92rem;
+  color: var(--text-sub);
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.entry-choice-stack {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.entry-choice-btn {
+  width: 100%;
+  min-height: 128px;
+  border-radius: 20px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  color: var(--text-main);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  padding: 18px 16px;
+}
+
+.entry-choice-btn:hover {
+  border-color: rgba(108, 99, 255, 0.55);
+  background: rgba(108, 99, 255, 0.12);
+}
+
+.entry-choice-btn:active {
+  transform: scale(0.98);
+}
+
+.entry-choice-icon {
+  font-size: 2rem;
+  color: var(--primary);
+}
+
+.entry-choice-label {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.entry-choice-desc {
+  font-size: 0.85rem;
+  color: var(--text-sub);
+}
+
+.entry-form {
+  display: grid;
+  gap: 12px;
+}
+
+.entry-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--glass-border);
+  color: var(--text-main);
+  border-radius: 14px;
+  padding: 14px 14px;
+  outline: none;
+  font-size: 1rem;
+}
+
+.entry-input:focus {
+  border-color: rgba(108, 99, 255, 0.7);
+  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.14);
+}
+
+.entry-message {
+  min-height: 22px;
+  margin-top: 10px;
+  font-size: 0.88rem;
+  text-align: center;
+  color: var(--warning);
+}
+
+.entry-message.error {
+  color: var(--error);
+}
+
+.entry-message.success {
+  color: var(--success);
+}
+
+.entry-btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.entry-back-btn {
+  margin-top: 0;
+}
+
+@media (max-width: 600px) {
+  .entry-shell {
+    width: min(100%, 100%);
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .entry-choice-btn {
+    min-height: 116px;
+  }
+}
