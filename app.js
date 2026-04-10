@@ -31,6 +31,10 @@ const state = {
   accessGranted: false,
   entryMode: '',
   desktopUser: null,
+
+  rangeModeArmed: false,
+  rangeAnchor: null,
+  lastArmableTicket: null,
 };
 
 const els = {};
@@ -148,6 +152,7 @@ function bindEvents() {
   });
 
   els.clearLogsBtn?.addEventListener('click', clearLogs);
+  els.displayCard?.addEventListener('click', handleDisplayCardRangeClick);
   els.historyBtn?.addEventListener('click', toggleHistoryView);
   els.syncBtn?.addEventListener('click', forceSync);
   els.reloadBtn?.addEventListener('click', () => window.location.reload());
@@ -296,7 +301,7 @@ function setDisplay(text, status = 'waiting') {
   main.textContent = safeText;
   els.displayValue.appendChild(main);
 
-  els.displayCard.className = `display-card ${status}`;
+    applyDisplayCardState(status);
 }
 
 function setDisplayWithSubline(primaryText, secondaryText, status = 'waiting') {
@@ -320,7 +325,273 @@ function setDisplayWithSubline(primaryText, secondaryText, status = 'waiting') {
     els.displayValue.appendChild(sub);
   }
 
+   applyDisplayCardState(status);
+}
+
+function applyDisplayCardState(status = 'waiting') {
+  if (!els.displayCard) return;
   els.displayCard.className = `display-card ${status}`;
+  if (state.rangeModeArmed) {
+    els.displayCard.classList.add('range-mode-armed');
+  }
+}
+
+function clearLastArmableTicket() {
+  state.lastArmableTicket = null;
+}
+
+function parseSequentialCode(code) {
+  const match = String(code || '').trim().match(/^([A-Za-z]+)(\d+)(.*)$/);
+  if (!match) return null;
+
+  const number = Number(match[2]);
+  if (!Number.isFinite(number)) return null;
+
+  return {
+    prefix: String(match[1] || '').toUpperCase(),
+    numberText: String(match[2] || ''),
+    width: String(match[2] || '').length,
+    number,
+    suffix: String(match[3] || ''),
+  };
+}
+
+function parseTicketRaw(rawInput) {
+  const parts = String(rawInput || '').split(',').map((part) => part.trim());
+  const code = parts[0] || '';
+
+  return {
+    rawInput: String(rawInput || ''),
+    parts,
+    code,
+    datePart: parts[1] || '',
+    tailParts: parts.slice(1),
+    tailSignature: parts.slice(1).join(','),
+    sequence: parseSequentialCode(code),
+  };
+}
+
+function buildRawFromParsedTicket(anchorParsed, number) {
+  const seq = anchorParsed.sequence;
+  const code =
+    `${seq.prefix}${String(number).padStart(seq.width, '0')}${seq.suffix}`;
+
+  return {
+    code,
+    raw: [code, ...anchorParsed.tailParts].join(','),
+  };
+}
+
+function removeRangeAnchorFromState(anchor) {
+  if (!anchor || !anchor.record) return;
+
+  const historyIndex = state.localHistory.findIndex((item) =>
+    item.code === anchor.record.code &&
+    item.time === anchor.record.time &&
+    item.fullTime === anchor.record.fullTime
+  );
+
+  if (historyIndex !== -1) {
+    state.localHistory.splice(historyIndex, 1);
+  }
+
+  const queueIndex = state.uploadQueue.findIndex((item) =>
+    item.content === anchor.record.code &&
+    item.time === anchor.record.fullTime &&
+    String(item.raw || item.content) === String(anchor.originalRaw || anchor.record.code)
+  );
+
+  if (queueIndex !== -1) {
+    state.uploadQueue.splice(queueIndex, 1);
+  }
+
+  saveToStorage();
+  renderLogList();
+}
+
+function restoreRangeAnchorIfNeeded() {
+  const anchor = state.rangeAnchor;
+  if (!anchor || !anchor.record) return;
+
+  pushRecord(anchor.record, anchor.originalRaw);
+  if (anchor.ticketTypeName) {
+    setDisplayWithSubline(anchor.parsed.code, anchor.ticketTypeName, 'success');
+    showUserInfo(anchor.ticketTypeName, '驗證通過');
+  } else {
+    setDisplay(anchor.parsed.code, 'success');
+    showUserInfo(anchor.parsed.sequence?.prefix || 'TICKET', '驗證通過');
+  }
+}
+
+function exitRangeMode(options = {}) {
+  const restoreAnchor = Boolean(options.restoreAnchor);
+  if (restoreAnchor) {
+    restoreRangeAnchorIfNeeded();
+  }
+
+  state.rangeModeArmed = false;
+  state.rangeAnchor = null;
+  applyDisplayCardState(els.displayCard?.classList.contains('success')
+    ? 'success'
+    : els.displayCard?.classList.contains('warning')
+      ? 'warning'
+      : els.displayCard?.classList.contains('error')
+        ? 'error'
+        : 'waiting'
+  );
+}
+
+function handleDisplayCardRangeClick() {
+  if (!state.accessGranted) return;
+  if (els.entryModal?.classList.contains('active')) return;
+  if (els.keyboardModal?.classList.contains('active')) return;
+  if (els.pairingModal?.classList.contains('active')) return;
+  if (state.scannerRunning) return;
+
+  if (state.rangeModeArmed) {
+    exitRangeMode({ restoreAnchor: true });
+    addSystemLog('連號模式已取消');
+    focusTrap();
+    return;
+  }
+
+  if (!state.lastArmableTicket) return;
+
+  state.rangeAnchor = {
+    parsed: state.lastArmableTicket.parsed,
+    originalRaw: state.lastArmableTicket.originalRaw,
+    record: state.lastArmableTicket.record,
+    ticketTypeName: state.lastArmableTicket.ticketTypeName || '',
+  };
+  state.rangeModeArmed = true;
+
+  removeRangeAnchorFromState(state.rangeAnchor);
+
+  setDisplayWithSubline(
+    state.rangeAnchor.parsed.code,
+    '連號模式已啟用，請直接掃最後一張',
+    'success'
+  );
+  showUserInfo(
+    state.rangeAnchor.ticketTypeName || state.rangeAnchor.parsed.sequence?.prefix || 'TICKET',
+    '等待最後一張'
+  );
+  addSystemLog(`連號模式啟用：${state.rangeAnchor.parsed.code}`);
+  focusTrap();
+}
+
+function pushBatchRecords(items) {
+  if (!Array.isArray(items) || items.length === 0) return;
+
+  for (let i = items.length - 1; i >= 0; i -= 1) {
+    state.localHistory.unshift(items[i].record);
+  }
+
+  items.forEach((item) => {
+    state.uploadQueue.push({
+      time: item.record.fullTime,
+      content: item.record.code,
+      raw: item.raw || item.record.code,
+    });
+  });
+
+  saveToStorage();
+
+  if (els.logList) {
+    const frag = document.createDocumentFragment();
+    items.forEach((item) => {
+      frag.appendChild(createLogRow(item.record));
+    });
+    els.logList.prepend(frag);
+  }
+}
+
+function handleRangeClosingScan(currentParsed, time, fullTime) {
+  const anchor = state.rangeAnchor;
+  if (!anchor || !anchor.parsed || !anchor.parsed.sequence) {
+    state.rangeModeArmed = false;
+    state.rangeAnchor = null;
+    playErrorBeep();
+    setDisplay('連號模式失效', 'error');
+    clearLastArmableTicket();
+    return true;
+  }
+
+  if (!currentParsed.sequence) {
+    playErrorBeep();
+    setDisplayWithSubline('連號不符', '請掃同批票券的最後一張', 'error');
+    showUserInfo(anchor.parsed.code, '仍在等待最後一張');
+    return true;
+  }
+
+  const sameStructure =
+    anchor.parsed.sequence.prefix === currentParsed.sequence.prefix &&
+    anchor.parsed.sequence.suffix === currentParsed.sequence.suffix &&
+    anchor.parsed.sequence.width === currentParsed.sequence.width &&
+    anchor.parsed.tailSignature === currentParsed.tailSignature;
+
+  if (!sameStructure) {
+    playErrorBeep();
+    setDisplayWithSubline('連號不符', '請掃同批票券的最後一張', 'error');
+    showUserInfo(anchor.parsed.code, '仍在等待最後一張');
+    return true;
+  }
+
+  const startNum = Math.min(anchor.parsed.sequence.number, currentParsed.sequence.number);
+  const endNum = Math.max(anchor.parsed.sequence.number, currentParsed.sequence.number);
+  const count = endNum - startNum + 1;
+
+  const existingOkCodes = new Set(
+    state.localHistory
+      .filter((item) => item.status === 'ok')
+      .map((item) => item.code)
+  );
+
+  const batchItems = [];
+  for (let n = startNum; n <= endNum; n += 1) {
+    const built = buildRawFromParsedTicket(anchor.parsed, n);
+
+    if (existingOkCodes.has(built.code)) {
+      playDuplicateSound();
+      setDisplayWithSubline('區間含重複票', built.code, 'warning');
+      showUserInfo(anchor.parsed.code, '請重新掃描或點一下取消');
+      return true;
+    }
+
+    batchItems.push({
+      raw: built.raw,
+      record: {
+        code: built.code,
+        time,
+        fullTime,
+        status: 'ok',
+        className: 'st-ok',
+      },
+    });
+  }
+
+  pushBatchRecords(batchItems);
+
+  state.rangeModeArmed = false;
+  state.rangeAnchor = null;
+  state.lastArmableTicket = null;
+
+  const firstCode = batchItems[0].record.code;
+  const lastCode = batchItems[batchItems.length - 1].record.code;
+  const ticketTypeName = anchor.ticketTypeName || '';
+
+  playSuccessBeeps(1);
+  setDisplayWithSubline(
+    `${firstCode}~${lastCode}`,
+    `共${count}張${ticketTypeName ? ` ｜ ${ticketTypeName}` : ''}`,
+    'success'
+  );
+  showUserInfo(
+    ticketTypeName || anchor.parsed.sequence.prefix || 'TICKET',
+    `連號完成｜共${count}張`
+  );
+
+  return true;
 }
 
 function showUserInfo(line1, line2) {
@@ -419,6 +690,15 @@ function processLocalLogic(rawInput, originalRaw = rawInput) {
     return;
   }
 
+  clearLastArmableTicket();
+
+  if (state.rangeModeArmed) {
+    playErrorBeep();
+    setDisplayWithSubline('連號模式中', '請直接掃最後一張票券', 'warning');
+    showUserInfo(state.rangeAnchor?.parsed?.code || '--', '仍在等待最後一張');
+    return;
+  }
+
   const isValidationTarget = state.localWhiteListRules.some((rule) => {
     const prefix = String(rule.prefix || '').toUpperCase();
     const length = Number(rule.length || 0);
@@ -437,11 +717,12 @@ function processLocalLogic(rawInput, originalRaw = rawInput) {
 }
 
 function processTicketLikeRecord(rawInput, originalRaw, time, fullTime, todayYmdCompact) {
-  const parts = rawInput.split(',').map((part) => part.trim());
-  const code = parts[0] || '';
-  const datePart = parts[1] || '';
+  const parsed = parseTicketRaw(rawInput);
+  const code = parsed.code;
+  const datePart = parsed.datePart;
 
   if (!code) {
+    clearLastArmableTicket();
     playErrorBeep();
     setDisplay('格式錯誤', 'error');
     addSystemLog('掃描到空白票號', 'st-exp');
@@ -449,9 +730,15 @@ function processTicketLikeRecord(rawInput, originalRaw, time, fullTime, todayYmd
   }
 
   if (datePart && datePart !== todayYmdCompact) {
+    clearLastArmableTicket();
     playErrorBeep();
     setDisplay(`過期票 (${datePart})`, 'error');
     addLogToUI({ time, code: `${code} (過期)`, className: 'st-exp' });
+    return;
+  }
+
+  if (state.rangeModeArmed) {
+    handleRangeClosingScan(parsed, time, fullTime);
     return;
   }
 
@@ -461,6 +748,7 @@ function processTicketLikeRecord(rawInput, originalRaw, time, fullTime, todayYmd
   const ticketTypeName = rule.name || '';
 
   if (isDuplicate) {
+    clearLastArmableTicket();
     playDuplicateSound();
     if (ticketTypeName) {
       setDisplayWithSubline('重複入場', ticketTypeName, 'warning');
@@ -484,9 +772,17 @@ function processTicketLikeRecord(rawInput, originalRaw, time, fullTime, todayYmd
 
   const record = { code, time, fullTime, status: 'ok', className: 'st-ok' };
   pushRecord(record, originalRaw);
+
+  state.lastArmableTicket = {
+    parsed,
+    originalRaw,
+    record,
+    ticketTypeName,
+  };
 }
 
 function processValidationCard(rawInput, originalRaw, time, fullTime) {
+  clearLastArmableTicket();
   const validUser = state.localValidationDB[rawInput];
   const isDuplicate = state.localHistory.some((item) => item.code === rawInput && item.status === 'ok');
 
