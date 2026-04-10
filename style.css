@@ -799,3 +799,24 @@ button {
     min-height: 116px;
   }
 }
+
+.display-card {
+  cursor: pointer;
+}
+
+.display-card.range-mode-armed {
+  border-color: #4da3ff !important;
+  box-shadow:
+    0 0 0 2px rgba(77, 163, 255, 0.28),
+    0 12px 32px rgba(0, 0, 0, 0.42),
+    0 0 24px rgba(77, 163, 255, 0.22);
+}
+
+.display-card.range-mode-armed .display-label {
+  color: #8ec5ff;
+}
+
+.display-card.range-mode-armed .display-sub-text,
+.display-card.range-mode-armed .info-line.sub {
+  color: #9fd0ff;
+}
