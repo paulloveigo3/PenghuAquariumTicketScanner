@@ -28,18 +28,14 @@ body {
   background-color: var(--bg-color);
   color: var(--text-main);
   font-family: 'Noto Sans TC', sans-serif;
-
   height: 100vh;
   height: 100dvh;
   width: 100%;
   max-width: 100%;
-
   display: flex;
   flex-direction: column;
-
   overflow: hidden;
   -webkit-text-size-adjust: 100%;
-
   transition: all 0.3s;
 }
 
@@ -159,42 +155,49 @@ button {
 .display-card {
   background: linear-gradient(145deg, #2a2a2a, #222);
   border-radius: 16px;
-  padding: 20px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 8px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   border: 1px solid var(--glass-border);
-  min-height: 156px;
+  min-height: 176px;
   position: relative;
   transition: all 0.2s ease;
+  cursor: pointer;
+  overflow: hidden;
 }
 
 .display-label {
   font-size: 0.6rem;
   color: var(--text-sub);
   text-transform: uppercase;
-  margin-bottom: 5px;
+  margin-bottom: 0;
+  text-align: center;
+  align-self: center;
+  flex: 0 0 auto;
 }
 
 .display-value {
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 6px;
   font-family: 'Roboto Mono', monospace;
-  font-size: 2rem;
+  font-size: clamp(1.15rem, 4.8vw, 2rem);
   font-weight: 700;
   text-align: center;
+  line-height: 1.15;
+  color: var(--text-main);
   word-break: break-word;
   overflow-wrap: anywhere;
-  color: var(--text-main);
-  line-height: 1.2;
 }
 
 .display-value.has-subline {
@@ -206,48 +209,55 @@ button {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  overflow-wrap: anywhere;
-  word-break: break-word;
   white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .display-main-text {
   font-size: inherit;
   font-weight: 700;
-  line-height: 1.18;
+  line-height: 1.15;
 }
 
 .display-sub-text {
   font-family: 'Noto Sans TC', sans-serif;
-  font-size: 1rem;
+  font-size: clamp(0.82rem, 2.8vw, 1rem);
   font-weight: 600;
-  line-height: 1.45;
+  line-height: 1.35;
   color: var(--text-sub);
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
 
 .user-info-box {
-  margin-top: 15px;
+  margin-top: 6px;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  flex: 0 0 auto;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
   padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.info-line {
+.info-line,
+.info-line.sub {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  font-size: 0.95rem;
-  color: #eee;
-  margin-bottom: 4px;
   text-align: center;
-  font-weight: 500;
-  letter-spacing: 0.4px;
   white-space: normal;
   word-break: break-word;
   overflow-wrap: anywhere;
+}
+
+.info-line {
+  font-size: 0.95rem;
+  color: #eee;
+  margin-bottom: 4px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
 }
 
 .info-line.sub {
@@ -540,7 +550,6 @@ button {
   color: #333;
 }
 
-
 .scanner-modal {
   padding: 0;
   background: rgba(0, 0, 0, 0.94);
@@ -614,49 +623,6 @@ button {
   font-size: 0.85rem;
   color: #b8b8b8;
   line-height: 1.5;
-}
-
-@media (max-width: 600px) {
-  .header {
-    padding:
-      calc(12px + env(safe-area-inset-top, 0px))
-      14px
-      12px
-      14px;
-  }
-
-  .main-container {
-    padding: 14px;
-  }
-
-  .footer {
-    padding:
-      12px
-      14px
-      calc(18px + env(safe-area-inset-bottom, 12px))
-      14px;
-    gap: 10px;
-  }
-
-  .display-value {
-    font-size: 1.65rem;
-  }
-
-  .log-row {
-    grid-template-columns: 82px minmax(0, 1fr);
-  }
-
-  .log-data {
-    font-size: 0.88rem;
-  }
-
-  .action-btn {
-    min-height: 68px;
-  }
-
-  .scanner-title {
-    font-size: 0.92rem;
-  }
 }
 
 .entry-modal {
@@ -788,22 +754,6 @@ button {
   margin-top: 0;
 }
 
-@media (max-width: 600px) {
-  .entry-shell {
-    width: min(100%, 100%);
-    padding: 18px;
-    border-radius: 20px;
-  }
-
-  .entry-choice-btn {
-    min-height: 116px;
-  }
-}
-
-.display-card {
-  cursor: pointer;
-}
-
 .display-card.range-mode-armed {
   border-color: #4da3ff !important;
   box-shadow:
@@ -819,4 +769,66 @@ button {
 .display-card.range-mode-armed .display-sub-text,
 .display-card.range-mode-armed .info-line.sub {
   color: #9fd0ff;
+}
+
+@media (max-width: 600px) {
+  .header {
+    padding:
+      calc(12px + env(safe-area-inset-top, 0px))
+      14px
+      12px
+      14px;
+  }
+
+  .main-container {
+    padding: 14px;
+  }
+
+  .footer {
+    padding:
+      12px
+      14px
+      calc(18px + env(safe-area-inset-bottom, 12px))
+      14px;
+    gap: 10px;
+  }
+
+  .display-card {
+    min-height: 168px;
+    padding: 14px;
+  }
+
+  .display-value {
+    font-size: clamp(1.05rem, 5vw, 1.45rem);
+  }
+
+  .display-sub-text {
+    font-size: 0.82rem;
+  }
+
+  .log-row {
+    grid-template-columns: 82px minmax(0, 1fr);
+  }
+
+  .log-data {
+    font-size: 0.88rem;
+  }
+
+  .action-btn {
+    min-height: 68px;
+  }
+
+  .scanner-title {
+    font-size: 0.92rem;
+  }
+
+  .entry-shell {
+    width: min(100%, 100%);
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .entry-choice-btn {
+    min-height: 116px;
+  }
 }
