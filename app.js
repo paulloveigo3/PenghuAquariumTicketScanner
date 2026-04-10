@@ -111,10 +111,10 @@ function ensureScannerModal() {
     document.body.appendChild(modal);
   }
 
-state.scannerModalEl = modal;
-state.scannerReaderEl = modal.querySelector('#qr-reader') || modal.querySelector('#scanner-reader');
-state.scannerCloseBtnEl = modal.querySelector('#closeScannerBtn') || modal.querySelector('#scanner-close-btn');
-state.scannerStatusEl = modal.querySelector('#scanner-status') || modal.querySelector('.scanner-hint');
+  state.scannerModalEl = modal;
+  state.scannerReaderEl = modal.querySelector('#qr-reader') || modal.querySelector('#scanner-reader');
+  state.scannerCloseBtnEl = modal.querySelector('#closeScannerBtn') || modal.querySelector('#scanner-close-btn');
+  state.scannerStatusEl = modal.querySelector('#scanner-status') || modal.querySelector('.scanner-hint');
 }
 
 function bindEvents() {
@@ -261,7 +261,40 @@ function updateSyncStatus(text, isBlinking = false) {
 
 function setDisplay(text, status = 'waiting') {
   if (!els.displayValue || !els.displayCard) return;
-  els.displayValue.innerHTML = text;
+
+  const safeText = text == null ? '' : String(text);
+  els.displayValue.innerHTML = '';
+  els.displayValue.classList.remove('has-subline');
+
+  const main = document.createElement('div');
+  main.className = 'display-main-text';
+  main.textContent = safeText;
+  els.displayValue.appendChild(main);
+
+  els.displayCard.className = `display-card ${status}`;
+}
+
+function setDisplayWithSubline(primaryText, secondaryText, status = 'waiting') {
+  if (!els.displayValue || !els.displayCard) return;
+
+  const safePrimary = primaryText == null ? '' : String(primaryText);
+  const safeSecondary = secondaryText == null ? '' : String(secondaryText);
+
+  els.displayValue.innerHTML = '';
+  els.displayValue.classList.toggle('has-subline', Boolean(safeSecondary));
+
+  const main = document.createElement('div');
+  main.className = 'display-main-text';
+  main.textContent = safePrimary;
+  els.displayValue.appendChild(main);
+
+  if (safeSecondary) {
+    const sub = document.createElement('div');
+    sub.className = 'display-sub-text';
+    sub.textContent = safeSecondary;
+    els.displayValue.appendChild(sub);
+  }
+
   els.displayCard.className = `display-card ${status}`;
 }
 
@@ -373,7 +406,7 @@ function processLocalLogic(rawInput, originalRaw = rawInput) {
   }
 
   playSuccessBeeps(1);
-  setDisplay(escapeHtml(rawInput), 'success');
+  setDisplay(rawInput, 'success');
   const record = { code: rawInput, time, fullTime, status: 'ok', className: 'st-ok' };
   pushRecord(record, originalRaw);
 }
@@ -392,7 +425,7 @@ function processTicketLikeRecord(rawInput, originalRaw, time, fullTime, todayYmd
 
   if (datePart && datePart !== todayYmdCompact) {
     playErrorBeep();
-    setDisplay(`過期票 (${escapeHtml(datePart)})`, 'error');
+    setDisplay(`過期票 (${datePart})`, 'error');
     addLogToUI({ time, code: `${code} (過期)`, className: 'st-exp' });
     return;
   }
@@ -404,18 +437,24 @@ function processTicketLikeRecord(rawInput, originalRaw, time, fullTime, todayYmd
 
   if (isDuplicate) {
     playDuplicateSound();
-    setDisplay('重複入場', 'warning');
-    if (ticketTypeName) showUserInfo(ticketTypeName, '重複票券');
+    if (ticketTypeName) {
+      setDisplayWithSubline('重複入場', ticketTypeName, 'warning');
+      showUserInfo(code, '重複票券');
+    } else {
+      setDisplay('重複入場', 'warning');
+      showUserInfo(code, '重複票券');
+    }
     addLogToUI({ time, code, className: 'st-warn' });
     return;
   }
 
   playSuccessBeeps(rule.sound || 1);
   if (ticketTypeName) {
-    setDisplay(`${escapeHtml(code)}<div style="font-size:1rem;color:#aaa;margin-top:6px;">${escapeHtml(ticketTypeName)}</div>`, 'success');
-    showUserInfo(ticketTypeName, prefix || 'TICKET');
+    setDisplayWithSubline(code, ticketTypeName, 'success');
+    showUserInfo(prefix || 'TICKET', '驗證通過');
   } else {
-    setDisplay(escapeHtml(code), 'success');
+    setDisplay(code, 'success');
+    showUserInfo(prefix || 'TICKET', '驗證通過');
   }
 
   const record = { code, time, fullTime, status: 'ok', className: 'st-ok' };
@@ -629,16 +668,16 @@ async function openCamera() {
   state.cameraLocked = true;
 
   if (!state.scannerReaderEl) {
-  throw new Error('找不到掃描器容器，請確認 HTML 內是否存在 #qr-reader 或 #scanner-reader');
-}
+    throw new Error('找不到掃描器容器，請確認 HTML 內是否存在 #qr-reader 或 #scanner-reader');
+  }
 
   try {
     els.body?.classList.remove('history-mode');
 
-   if (!state.html5Qrcode) {
-  const readerId = state.scannerReaderEl?.id || 'qr-reader';
-  state.html5Qrcode = new Html5Qrcode(readerId);
-}
+    if (!state.html5Qrcode) {
+      const readerId = state.scannerReaderEl?.id || 'qr-reader';
+      state.html5Qrcode = new Html5Qrcode(readerId);
+    }
 
     state.scannerModalEl?.classList.add('active');
     state.scannerModalEl?.setAttribute('aria-hidden', 'false');
