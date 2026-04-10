@@ -97,7 +97,7 @@
     </div>
   </div>
 
-  <div id="keyboard-modal" class="modal active" aria-hidden="false">
+  <div id="keyboard-modal" class="modal" aria-hidden="true">
     <div class="pairing-box keyboard-box">
       <span class="material-icons-round keyboard-icon">keyboard_alt</span>
       <div class="pairing-text">輸入法檢查</div>
@@ -113,6 +113,58 @@
     </div>
   </div>
 
- <script src="./app.js?v=20260410-6" defer></script>
+ <script src="./app.js?v=20260410-7" defer></script>
+
+  <div id="entry-modal" class="modal active entry-modal" aria-hidden="false">
+  <div class="entry-shell">
+    <div id="entrySelectPage" class="entry-page">
+      <div class="entry-title">請選擇作業模式</div>
+      <div class="entry-subtitle">手機版可直接進入，電腦版需先登入帳密</div>
+
+      <div class="entry-choice-stack">
+        <button class="entry-choice-btn" id="enterMobileBtn" type="button">
+          <span class="material-icons-round entry-choice-icon">smartphone</span>
+          <div class="entry-choice-label">手機版</div>
+          <div class="entry-choice-desc">直接進入掃描作業</div>
+        </button>
+
+        <button class="entry-choice-btn" id="enterDesktopBtn" type="button">
+          <span class="material-icons-round entry-choice-icon">desktop_windows</span>
+          <div class="entry-choice-label">電腦版</div>
+          <div class="entry-choice-desc">進入帳密登入畫面</div>
+        </button>
+      </div>
+    </div>
+
+    <div id="entryDesktopPage" class="entry-page" hidden>
+      <div class="entry-title">電腦版登入</div>
+      <div class="entry-subtitle">請輸入白名單帳密</div>
+
+      <div class="entry-form">
+        <input
+          id="desktopAccountInput"
+          class="entry-input"
+          type="text"
+          placeholder="帳號"
+          autocomplete="username"
+        />
+        <input
+          id="desktopPasswordInput"
+          class="entry-input"
+          type="password"
+          placeholder="密碼"
+          autocomplete="current-password"
+        />
+      </div>
+
+      <div id="entryMessage" class="entry-message"></div>
+
+      <div class="entry-btn-row">
+        <button class="secondary-btn entry-back-btn" id="entryBackBtn" type="button">上一頁</button>
+        <button class="primary-btn" id="desktopLoginBtn" type="button">登入</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
