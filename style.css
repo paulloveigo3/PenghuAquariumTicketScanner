@@ -166,7 +166,7 @@ button {
   justify-content: center;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   border: 1px solid var(--glass-border);
-  min-height: 140px;
+  min-height: 156px;
   position: relative;
   transition: all 0.2s ease;
 }
@@ -179,6 +179,14 @@ button {
 }
 
 .display-value {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   font-family: 'Roboto Mono', monospace;
   font-size: 2rem;
   font-weight: 700;
@@ -187,6 +195,35 @@ button {
   overflow-wrap: anywhere;
   color: var(--text-main);
   line-height: 1.2;
+}
+
+.display-value.has-subline {
+  gap: 8px;
+}
+
+.display-main-text,
+.display-sub-text {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.display-main-text {
+  font-size: inherit;
+  font-weight: 700;
+  line-height: 1.18;
+}
+
+.display-sub-text {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text-sub);
+  letter-spacing: 0.3px;
 }
 
 .user-info-box {
@@ -199,12 +236,18 @@ button {
 }
 
 .info-line {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   font-size: 0.95rem;
   color: #eee;
   margin-bottom: 4px;
   text-align: center;
   font-weight: 500;
   letter-spacing: 0.4px;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .info-line.sub {
@@ -311,6 +354,7 @@ button {
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
+  max-width: 100%;
 }
 
 .log-row.st-ok .log-data,
