@@ -169,6 +169,22 @@ input:focus {
   align-content: start;
 }
 
+/* =========================================
+   新增：當設定啟用時，隱藏其他所有板塊
+========================================= */
+.page-view.settings-active > *:not(.page-head):not(.page-settings-panel) {
+  display: none !important;
+}
+
+/* 設定啟用時，齒輪按鈕高亮提示 */
+.page-view.settings-active .setting-trigger {
+  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(124,140,255,.25);
+}
+/* ========================================= */
+
 .page-head,
 .page-head-left,
 .page-actions,
@@ -241,7 +257,7 @@ input:focus {
 .icon-btn .material-icons-round { font-size: 20px; }
 
 /* =========================================
-   新增：設定面板 (Settings Panel) 樣式
+   設定面板 (Settings Panel) 樣式
 ========================================= */
 .page-settings-panel {
   display: none; /* 預設隱藏 */
