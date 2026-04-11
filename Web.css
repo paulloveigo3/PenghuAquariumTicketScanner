@@ -31,7 +31,7 @@ html, body {
 }
 
 a, button { color: inherit; }
-button, input { font: inherit; }
+button, input, select { font: inherit; }
 button {
   border: 0;
   background: none;
@@ -166,6 +166,7 @@ input:focus {
 }
 .page-view.active {
   display: grid;
+  align-content: start;
 }
 
 .page-head,
@@ -238,6 +239,137 @@ input:focus {
   color: #dbe1ff;
 }
 .icon-btn .material-icons-round { font-size: 20px; }
+
+/* =========================================
+   新增：設定面板 (Settings Panel) 樣式
+========================================= */
+.page-settings-panel {
+  display: none; /* 預設隱藏 */
+  grid-template-columns: 180px 1fr;
+  gap: 24px;
+  padding: 24px;
+  border-radius: 24px;
+  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.page-view.settings-active .page-settings-panel {
+  display: grid;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.settings-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-right: 1px solid var(--line);
+  padding-right: 24px;
+}
+.settings-tab {
+  text-align: left;
+  padding: 12px 16px;
+  border-radius: 14px;
+  color: var(--text-soft);
+  transition: 0.2s ease;
+  font-weight: 500;
+}
+.settings-tab:hover {
+  background: rgba(255,255,255,.05);
+  color: var(--text);
+}
+.settings-tab.active {
+  background: rgba(124,140,255,.18);
+  color: #fff;
+  border-color: rgba(124,140,255,.28);
+}
+
+.settings-body {
+  min-width: 0;
+}
+.setting-section {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.2s ease forwards;
+}
+.setting-section.active {
+  display: flex;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.setting-section h3 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  color: var(--text);
+}
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: rgba(255,255,255,.02);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+/* 現代化開關元件 (Toggle Switch) */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+  flex: 0 0 auto;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(255,255,255,.1);
+  border-radius: 26px;
+  transition: .3s ease;
+  border: 1px solid var(--line);
+}
+.toggle-switch .slider:before {
+  position: absolute;
+  content: "";
+  height: 18px; width: 18px;
+  left: 3px; bottom: 3px;
+  background-color: var(--text-soft);
+  border-radius: 50%;
+  transition: .3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.toggle-switch input:checked + .slider {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+.toggle-switch input:checked + .slider:before {
+  transform: translateX(22px);
+  background-color: #fff;
+}
+
+/* Glass Select 下拉選單 */
+.glass-select {
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 8px 14px;
+  border-radius: 12px;
+  outline: none;
+  cursor: pointer;
+  transition: .2s;
+}
+.glass-select:focus {
+  border-color: rgba(124,140,255,.46);
+}
+.glass-select option {
+  background: var(--bg-2);
+  color: var(--text);
+}
+/* ========================================= */
 
 .stats-grid,
 .content-grid,
@@ -516,4 +648,20 @@ input:focus {
   .page-head h1 { font-size: 1.45rem; }
   .panel, .metric-card, .ticket-work-card, .special-card { padding: 16px; }
   .donut-mock { width: 200px; height: 200px; }
+  
+  /* RWD for Settings Panel */
+  .page-settings-panel {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px;
+  }
+  .settings-sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    padding-right: 0;
+    padding-bottom: 16px;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+  .settings-tab { white-space: nowrap; }
 }
