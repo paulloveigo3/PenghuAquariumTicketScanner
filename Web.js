@@ -12,8 +12,7 @@
 
     views.forEach((view) => {
       view.classList.toggle('active', view.dataset.view === viewName);
-      // 切換頁面時，自動收起設定面板
-      view.classList.remove('settings-active');
+      // 極致效率：不再自動收起面板，依賴 body 全局鎖定狀態
     });
 
     navButtons.forEach((btn) => {
@@ -44,17 +43,15 @@
   });
 
   /* =========================================
-     新增：設定面板觸發與分頁切換邏輯
+     修改：全局設定模式觸發與分頁切換邏輯
   ========================================= */
 
-  // 1. 點擊齒輪圖示，觸發當前頁面的設定面板展開/收起
+  // 1. 點擊齒輪圖示，切換「全局設定模式 (Settings Locked)」
   const settingTriggers = document.querySelectorAll('.setting-trigger');
   settingTriggers.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const parentView = e.target.closest('.page-view');
-      if (parentView) {
-        parentView.classList.toggle('settings-active');
-      }
+    btn.addEventListener('click', () => {
+      // 在 body 上切換 class，完全鎖定設定狀態
+      document.body.classList.toggle('settings-locked');
     });
   });
 
