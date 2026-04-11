@@ -170,14 +170,14 @@ input:focus {
 }
 
 /* =========================================
-   新增：當設定啟用時，隱藏其他所有板塊
+   全局鎖定：當設定啟用時，隱藏所有分頁的內容板塊
 ========================================= */
-.page-view.settings-active > *:not(.page-head):not(.page-settings-panel) {
+body.settings-locked .page-view > *:not(.page-head):not(.page-settings-panel) {
   display: none !important;
 }
 
-/* 設定啟用時，齒輪按鈕高亮提示 */
-.page-view.settings-active .setting-trigger {
+/* 全局鎖定：齒輪按鈕保持高亮提示 */
+body.settings-locked .setting-trigger {
   background: linear-gradient(135deg, var(--primary), var(--primary-2));
   color: white;
   border-color: transparent;
@@ -267,9 +267,12 @@ input:focus {
   border-radius: 24px;
   animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-.page-view.settings-active .page-settings-panel {
+
+/* 全局鎖定時，啟用該面板顯示 */
+body.settings-locked .page-settings-panel {
   display: grid;
 }
+
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
