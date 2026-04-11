@@ -12,6 +12,8 @@
 
     views.forEach((view) => {
       view.classList.toggle('active', view.dataset.view === viewName);
+      // 切換頁面時，自動收起設定面板
+      view.classList.remove('settings-active');
     });
 
     navButtons.forEach((btn) => {
@@ -40,4 +42,42 @@
       setView(nextHash, false);
     }
   });
+
+  /* =========================================
+     新增：設定面板觸發與分頁切換邏輯
+  ========================================= */
+
+  // 1. 點擊齒輪圖示，觸發當前頁面的設定面板展開/收起
+  const settingTriggers = document.querySelectorAll('.setting-trigger');
+  settingTriggers.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const parentView = e.target.closest('.page-view');
+      if (parentView) {
+        parentView.classList.toggle('settings-active');
+      }
+    });
+  });
+
+  // 2. 設定面板內部的左側選單切換
+  const settingTabs = document.querySelectorAll('.settings-tab');
+  settingTabs.forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      const panel = e.target.closest('.page-settings-panel');
+      if (!panel) return;
+
+      const targetSetting = tab.dataset.settingTarget;
+
+      // 移除該面板內所有 tab 與 section 的 active 狀態
+      panel.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+      panel.querySelectorAll('.setting-section').forEach(s => s.classList.remove('active'));
+
+      // 加上 active 給當前點擊項目
+      tab.classList.add('active');
+      const targetSection = panel.querySelector(`.setting-section[data-setting="${targetSetting}"]`);
+      if (targetSection) {
+        targetSection.classList.add('active');
+      }
+    });
+  });
+
 })();
