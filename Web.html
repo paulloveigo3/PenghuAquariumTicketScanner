@@ -72,7 +72,7 @@
       <section class="page-view active" data-view="dashboard">
         <header class="page-head">
           <div class="page-head-left">
-            <button class="icon-btn subtle" title="主頁設定" aria-label="主頁設定">
+            <button class="icon-btn subtle setting-trigger" title="主頁設定" aria-label="主頁設定">
               <span class="material-icons-round">settings</span>
             </button>
             <div>
@@ -88,6 +88,45 @@
             <button class="icon-btn primary" title="重新整理"><span class="material-icons-round">refresh</span></button>
           </div>
         </header>
+
+        <div class="page-settings-panel glass">
+          <div class="settings-sidebar">
+            <button class="settings-tab active" data-setting-target="general">一般設定</button>
+            <button class="settings-tab" data-setting-target="display">圖表顯示</button>
+            <button class="settings-tab" data-setting-target="data">資料連線</button>
+          </div>
+          <div class="settings-body">
+            <div class="setting-section active" data-setting="general">
+              <h3>一般設定</h3>
+              <div class="setting-row">
+                <span>自動重新整理資料 (每 5 分鐘)</span>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
+              </div>
+              <div class="setting-row">
+                <span>顯示昨日對比數據</span>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
+              </div>
+            </div>
+            <div class="setting-section" data-setting="display">
+              <h3>圖表顯示設定</h3>
+              <div class="setting-row">
+                <span>預設圖表時間跨度</span>
+                <select class="glass-select">
+                  <option>近 7 日</option>
+                  <option>近 30 日</option>
+                  <option>本月份</option>
+                </select>
+              </div>
+            </div>
+            <div class="setting-section" data-setting="data">
+              <h3>資料連線狀態</h3>
+              <div class="setting-row">
+                <span>API 狀態：<span class="tag ok">連線正常</span></span>
+                <button class="icon-btn subtle"><span class="material-icons-round">sync</span></button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <section class="stats-grid four">
           <article class="metric-card glass"><span>今日總入場</span><strong>1,284</strong><small>較昨日 +8.2%</small></article>
@@ -174,7 +213,7 @@
       <section class="page-view" data-view="agencies">
         <header class="page-head">
           <div class="page-head-left">
-            <button class="icon-btn subtle" title="旅行社頁設定" aria-label="旅行社頁設定">
+            <button class="icon-btn subtle setting-trigger" title="旅行社頁設定" aria-label="旅行社頁設定">
               <span class="material-icons-round">settings</span>
             </button>
             <div>
@@ -190,6 +229,29 @@
             <button class="icon-btn primary" title="下載清單"><span class="material-icons-round">download</span></button>
           </div>
         </header>
+
+        <div class="page-settings-panel glass">
+          <div class="settings-sidebar">
+            <button class="settings-tab active" data-setting-target="filter">篩選預設</button>
+            <button class="settings-tab" data-setting-target="export">匯出設定</button>
+          </div>
+          <div class="settings-body">
+            <div class="setting-section active" data-setting="filter">
+              <h3>預設篩選與排序</h3>
+              <div class="setting-row">
+                <span>隱藏無餘票旅行社</span>
+                <label class="toggle-switch"><input type="checkbox"><span class="slider"></span></label>
+              </div>
+            </div>
+            <div class="setting-section" data-setting="export">
+              <h3>報表匯出</h3>
+              <div class="setting-row">
+                <span>匯出包含聯絡人資訊</span>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <section class="toolbar glass-soft">
           <div class="toolbar-left">
@@ -269,7 +331,7 @@
       <section class="page-view" data-view="daily">
         <header class="page-head">
           <div class="page-head-left">
-            <button class="icon-btn subtle" title="當日票種設定" aria-label="當日票種設定">
+            <button class="icon-btn subtle setting-trigger" title="當日票種設定" aria-label="當日票種設定">
               <span class="material-icons-round">settings</span>
             </button>
             <div>
@@ -285,6 +347,21 @@
             <button class="icon-btn primary" title="下載全部"><span class="material-icons-round">download</span></button>
           </div>
         </header>
+
+        <div class="page-settings-panel glass">
+          <div class="settings-sidebar">
+            <button class="settings-tab active" data-setting-target="sync">同步設定</button>
+          </div>
+          <div class="settings-body">
+            <div class="setting-section active" data-setting="sync">
+              <h3>自動同步 Google Sheet</h3>
+              <div class="setting-row">
+                <span>每日結算自動寫入報表</span>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <section class="ticket-card-grid">
           <article class="ticket-work-card glass">
@@ -348,7 +425,7 @@
       <section class="page-view" data-view="membership">
         <header class="page-head">
           <div class="page-head-left">
-            <button class="icon-btn subtle" title="洄游卡設定" aria-label="洄游卡設定">
+            <button class="icon-btn subtle setting-trigger" title="洄游卡設定" aria-label="洄游卡設定">
               <span class="material-icons-round">settings</span>
             </button>
             <div>
@@ -364,6 +441,21 @@
             <button class="icon-btn primary" title="下載會員"><span class="material-icons-round">download</span></button>
           </div>
         </header>
+
+        <div class="page-settings-panel glass">
+          <div class="settings-sidebar">
+            <button class="settings-tab active" data-setting-target="notify">通知設定</button>
+          </div>
+          <div class="settings-body">
+            <div class="setting-section active" data-setting="notify">
+              <h3>到期提醒</h3>
+              <div class="setting-row">
+                <span>自動高亮 7 日內到期會員</span>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <section class="stats-grid three">
           <article class="metric-card glass"><span>有效會員</span><strong>4,288</strong><small>本月新增 86 位</small></article>
@@ -404,7 +496,7 @@
       <section class="page-view" data-view="special">
         <header class="page-head">
           <div class="page-head-left">
-            <button class="icon-btn subtle" title="特殊票設定" aria-label="特殊票設定">
+            <button class="icon-btn subtle setting-trigger" title="特殊票設定" aria-label="特殊票設定">
               <span class="material-icons-round">settings</span>
             </button>
             <div>
@@ -420,6 +512,21 @@
             <button class="icon-btn primary" title="下載特殊票資料"><span class="material-icons-round">download</span></button>
           </div>
         </header>
+
+        <div class="page-settings-panel glass">
+          <div class="settings-sidebar">
+            <button class="settings-tab active" data-setting-target="audit">稽核設定</button>
+          </div>
+          <div class="settings-body">
+            <div class="setting-section active" data-setting="audit">
+              <h3>異常票稽核</h3>
+              <div class="setting-row">
+                <span>自動攔截無備註之招待票</span>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <section class="special-grid">
           <article class="special-card glass danger-border">
