@@ -938,7 +938,22 @@ function continueAsMobile() {
 }
 
 function handleDesktopLoginEnter(event) {
-  if (event.key === 'Enter') {
+  if (event.key !== 'Enter') return;
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const target = event.target;
+
+  if (target === els.desktopAccountInput) {
+    if (!String(els.desktopPasswordInput?.value || '').trim()) {
+      els.desktopPasswordInput?.focus();
+      els.desktopPasswordInput?.select?.();
+      return;
+    }
+  }
+
+  if (target === els.desktopPasswordInput || target === els.desktopAccountInput) {
     submitDesktopLogin();
   }
 }
@@ -955,17 +970,15 @@ async function submitDesktopLogin() {
   if (els.desktopLoginBtn) els.desktopLoginBtn.disabled = true;
   setEntryMessage('登入中...');
 
-  try {
-    const res = await apiRequest('loginFrontDesk', { account, password }, 'POST');
-    grantAccess('desktop', res.user || { account: account, name: account });
-    closeEntryModal();
-    addSystemLog('桌機登入成功：' + ((res.user && res.user.name) || account), 'st-ok');
-    openKeyboardModal();
-  } catch (error) {
-    setEntryMessage(error.message || '登入失敗', 'error');
-  } finally {
-    if (els.desktopLoginBtn) els.desktopLoginBtn.disabled = false;
-  }
+try {
+  const res = await apiRequest('loginFrontDesk', { account, password }, 'POST');
+  grantAccess('desktop', res.user || { account: account, name: account });
+  window.location.href = './Web.html';
+} catch (error) {
+  setEntryMessage(error.message || '登入失敗', 'error');
+} finally {
+  if (els.desktopLoginBtn) els.desktopLoginBtn.disabled = false;
+}
 }
 
 function toggleBluetooth() {
