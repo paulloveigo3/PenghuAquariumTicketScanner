@@ -5,10 +5,6 @@ const CONFIG = {
   timezone: 'Asia/Taipei',
 
   // 後台入口（登入成功後跳轉）
-  adminWebUrl: './Web.html',
-
-  // 新後台專用的 Web.gs Web App URL
-  // 這裡請改成「新試算表綁定的 Web.gs」部署網址
   adminApiUrl: 'https://script.google.com/macros/s/AKfycbweuDFUCDBfTnhhZDqDWgf6VaOucvZuTvPWRbQBZnCVSUnBhyy6xZv8OCElIqr_PoKe/exec',
 };
 
