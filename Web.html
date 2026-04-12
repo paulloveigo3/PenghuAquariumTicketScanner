@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -7,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&family=Material+Icons+Round&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./Web.css" />
+  <link rel="stylesheet" href="./004.css" />
 </head>
 <body>
   <div class="admin-shell">
@@ -16,7 +17,7 @@
         <div class="brand-mark">票</div>
         <div class="brand-copy">
           <strong>票務操作後台</strong>
-          <span>Web Admin Panel</span>
+          <span>Agency Admin Panel</span>
         </div>
       </div>
 
@@ -44,29 +45,19 @@
       </nav>
 
       <div class="sidebar-foot glass-soft">
-        <div class="small-label">登入來源</div>
-        <strong>沿用原本 index.html</strong>
-        <span>此頁面只作為 Web 後台 UI</span>
+        <div class="small-label">資料模式</div>
+        <strong>TravelAgencyDB + IssueTicketDB</strong>
+        <span>自動預載 OCR、切票與聯絡備註資料</span>
       </div>
     </aside>
 
     <main class="main-shell">
       <div class="mobile-nav glass">
-        <button class="nav-item active" data-view-target="dashboard" title="主頁總圖表">
-          <span class="material-icons-round">dashboard</span>
-        </button>
-        <button class="nav-item" data-view-target="agencies" title="旅行社總覽">
-          <span class="material-icons-round">apartment</span>
-        </button>
-        <button class="nav-item" data-view-target="daily" title="當日票種入場">
-          <span class="material-icons-round">today</span>
-        </button>
-        <button class="nav-item" data-view-target="membership" title="洄游卡資料">
-          <span class="material-icons-round">badge</span>
-        </button>
-        <button class="nav-item" data-view-target="special" title="特殊票種資料">
-          <span class="material-icons-round">local_activity</span>
-        </button>
+        <button class="nav-item active" data-view-target="dashboard" title="主頁總圖表"><span class="material-icons-round">dashboard</span></button>
+        <button class="nav-item" data-view-target="agencies" title="旅行社總覽"><span class="material-icons-round">apartment</span></button>
+        <button class="nav-item" data-view-target="daily" title="當日票種入場"><span class="material-icons-round">today</span></button>
+        <button class="nav-item" data-view-target="membership" title="洄游卡資料"><span class="material-icons-round">badge</span></button>
+        <button class="nav-item" data-view-target="special" title="特殊票種資料"><span class="material-icons-round">local_activity</span></button>
       </div>
 
       <section class="page-view active" data-view="dashboard">
@@ -78,135 +69,36 @@
             <div>
               <div class="eyebrow">OVERVIEW</div>
               <h1>主頁總圖表</h1>
-              <p>先看全局，再進入旅行社、日報表、會員與特殊票種。</p>
+              <p>主頁保留概要；旅行社總覽已改為實際連 DB 預載。</p>
             </div>
           </div>
           <div class="page-actions">
-            <button class="icon-btn" title="搜尋"><span class="material-icons-round">search</span></button>
-            <button class="icon-btn" title="篩選"><span class="material-icons-round">filter_alt</span></button>
-            <button class="icon-btn" title="下載總覽"><span class="material-icons-round">download</span></button>
-            <button class="icon-btn primary" title="重新整理"><span class="material-icons-round">refresh</span></button>
+            <button class="icon-btn" id="btn-refresh-dashboard" title="重新整理"><span class="material-icons-round">refresh</span></button>
           </div>
         </header>
 
         <div class="page-settings-panel glass">
           <div class="settings-sidebar">
             <button class="settings-tab active" data-setting-target="general">一般設定</button>
-            <button class="settings-tab" data-setting-target="display">圖表顯示</button>
-            <button class="settings-tab" data-setting-target="data">資料連線</button>
+            <button class="settings-tab" data-setting-target="data">資料摘要</button>
           </div>
           <div class="settings-body">
             <div class="setting-section active" data-setting="general">
               <h3>一般設定</h3>
-              <div class="setting-row">
-                <span>自動重新整理資料 (每 5 分鐘)</span>
-                <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
-              </div>
-              <div class="setting-row">
-                <span>顯示昨日對比數據</span>
-                <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
-              </div>
-            </div>
-            <div class="setting-section" data-setting="display">
-              <h3>圖表顯示設定</h3>
-              <div class="setting-row">
-                <span>預設圖表時間跨度</span>
-                <select class="glass-select">
-                  <option>近 7 日</option>
-                  <option>近 30 日</option>
-                  <option>本月份</option>
-                </select>
-              </div>
+              <div class="setting-row"><span>進入頁面後自動讀取旅行社資料</span><span class="tag ok">已啟用</span></div>
             </div>
             <div class="setting-section" data-setting="data">
-              <h3>資料連線狀態</h3>
-              <div class="setting-row">
-                <span>API 狀態：<span class="tag ok">連線正常</span></span>
-                <button class="icon-btn subtle"><span class="material-icons-round">sync</span></button>
-              </div>
+              <h3>資料摘要</h3>
+              <div class="setting-row"><span>目前 DB 載入狀態</span><span class="tag" id="dashboard-db-state">尚未載入</span></div>
             </div>
           </div>
         </div>
 
-        <section class="stats-grid four">
-          <article class="metric-card glass"><span>今日總入場</span><strong>1,284</strong><small>較昨日 +8.2%</small></article>
-          <article class="metric-card glass"><span>今日切票總量</span><strong>1,512</strong><small>旅行社占比 62%</small></article>
-          <article class="metric-card glass"><span>洄游卡使用</span><strong>163</strong><small>有效會員 4,288</small></article>
-          <article class="metric-card glass accent-warn"><span>待處理異常</span><strong>7</strong><small>3 筆報表 / 4 筆票務</small></article>
-        </section>
-
-        <section class="content-grid two-one">
-          <article class="panel glass">
-            <div class="panel-head">
-              <div>
-                <div class="panel-title">近 7 日入場趨勢</div>
-                <div class="panel-sub">先用假圖表示意排版，之後可直接換成真資料。</div>
-              </div>
-              <div class="segment-wrap">
-                <button class="chip active">日</button>
-                <button class="chip">週</button>
-                <button class="chip">月</button>
-              </div>
-            </div>
-            <div class="fake-chart bars-chart">
-              <div class="bar-col"><span>04/05</span><i style="height:46%"></i></div>
-              <div class="bar-col"><span>04/06</span><i style="height:58%"></i></div>
-              <div class="bar-col"><span>04/07</span><i style="height:71%"></i></div>
-              <div class="bar-col"><span>04/08</span><i style="height:62%"></i></div>
-              <div class="bar-col"><span>04/09</span><i style="height:84%"></i></div>
-              <div class="bar-col"><span>04/10</span><i style="height:78%"></i></div>
-              <div class="bar-col active"><span>04/11</span><i style="height:92%"></i></div>
-            </div>
-          </article>
-
-          <article class="panel glass">
-            <div class="panel-head">
-              <div>
-                <div class="panel-title">票種佔比</div>
-                <div class="panel-sub">一眼掌握熱門票種</div>
-              </div>
-            </div>
-            <div class="donut-mock"><div class="donut-center"><strong>100%</strong><span>今日總量</span></div></div>
-            <div class="legend-list compact">
-              <div><b></b> 全票 42%</div>
-              <div><b></b> 優待票 23%</div>
-              <div><b></b> 團體票 18%</div>
-              <div><b></b> 洄游卡 9%</div>
-              <div><b></b> 特殊票 8%</div>
-            </div>
-          </article>
-        </section>
-
-        <section class="content-grid one-two">
-          <article class="panel glass">
-            <div class="panel-head">
-              <div>
-                <div class="panel-title">快捷入口</div>
-                <div class="panel-sub">第一次進來的人也能快速找到位置</div>
-              </div>
-            </div>
-            <div class="quick-grid">
-              <button class="quick-card" data-view-target="agencies"><strong>旅行社</strong><span>入場、切票、備註、聯絡方式</span></button>
-              <button class="quick-card" data-view-target="daily"><strong>當日票種</strong><span>勾選、報表、下載</span></button>
-              <button class="quick-card" data-view-target="membership"><strong>洄游卡</strong><span>會員資料與入場紀錄</span></button>
-              <button class="quick-card" data-view-target="special"><strong>特殊票</strong><span>免費票、招待票、異常票</span></button>
-            </div>
-          </article>
-
-          <article class="panel glass">
-            <div class="panel-head">
-              <div>
-                <div class="panel-title">今日操作提醒</div>
-                <div class="panel-sub">資訊密度高，但保持清楚</div>
-              </div>
-            </div>
-            <div class="notice-list">
-              <div class="notice-row warn"><strong>旅行社 A</strong><span>切票量高於平均，建議複核</span></div>
-              <div class="notice-row ok"><strong>日報表同步</strong><span>07:30 已完成</span></div>
-              <div class="notice-row danger"><strong>特殊票異常</strong><span>有 2 筆待人工確認</span></div>
-              <div class="notice-row"><strong>洄游卡</strong><span>今日 12 張接近到期</span></div>
-            </div>
-          </article>
+        <section class="stats-grid four" id="dashboard-summary-cards">
+          <article class="metric-card glass"><span>旅行社總數</span><strong id="sum-agencies">--</strong><small>依 IssueTicketDB 統計</small></article>
+          <article class="metric-card glass"><span>總切票數</span><strong id="sum-issued">--</strong><small>所有旅行社累計</small></article>
+          <article class="metric-card glass"><span>今日旅行社入場</span><strong id="sum-today">--</strong><small>由 OCR 當日票券序號比對</small></article>
+          <article class="metric-card glass accent-warn"><span>剩餘票數總和</span><strong id="sum-remaining">--</strong><small>切票數 - OCR 已使用</small></article>
         </section>
       </section>
 
@@ -219,35 +111,60 @@
             <div>
               <div class="eyebrow">AGENCY</div>
               <h1>旅行社總覽</h1>
-              <p>所有旅行社、入場量、切票量、聯絡方式、備註集中在同一頁。</p>
+              <p>總切票數、今日入場、剩餘票數、聯絡備註與切票操作整合在同一頁。</p>
             </div>
           </div>
           <div class="page-actions">
-            <button class="icon-btn" title="搜尋旅行社"><span class="material-icons-round">search</span></button>
-            <button class="icon-btn" title="篩選"><span class="material-icons-round">filter_alt</span></button>
-            <button class="icon-btn" title="新增旅行社"><span class="material-icons-round">person_add</span></button>
-            <button class="icon-btn primary" title="下載清單"><span class="material-icons-round">download</span></button>
+            <button class="icon-btn" id="btn-reload-agencies" title="重新載入"><span class="material-icons-round">refresh</span></button>
+            <button class="icon-btn primary" id="btn-save-settings-top" title="儲存設定"><span class="material-icons-round">save</span></button>
           </div>
         </header>
 
         <div class="page-settings-panel glass">
           <div class="settings-sidebar">
-            <button class="settings-tab active" data-setting-target="filter">篩選預設</button>
-            <button class="settings-tab" data-setting-target="export">匯出設定</button>
+            <button class="settings-tab active" data-setting-target="connection">資料庫設定</button>
+            <button class="settings-tab" data-setting-target="security">AES / 金鑰設定</button>
+            <button class="settings-tab" data-setting-target="notes">聯絡與備註</button>
           </div>
           <div class="settings-body">
-            <div class="setting-section active" data-setting="filter">
-              <h3>預設篩選與排序</h3>
-              <div class="setting-row">
-                <span>隱藏無餘票旅行社</span>
-                <label class="toggle-switch"><input type="checkbox"><span class="slider"></span></label>
+            <div class="setting-section active" data-setting="connection">
+              <h3>資料庫設定</h3>
+              <div class="setting-field-grid">
+                <label class="setting-field">
+                  <span>TravelAgencyDB_ID</span>
+                  <input type="text" id="setting-travelAgencyDbId" placeholder="輸入 TravelAgencyDB 資料夾 ID" />
+                </label>
+                <label class="setting-field">
+                  <span>IssueTicketDB_ID</span>
+                  <input type="text" id="setting-issueTicketDbId" placeholder="輸入 IssueTicketDB 資料夾 ID 或 issue_ticket_db.json 檔案 ID" />
+                </label>
               </div>
+              <div class="setting-inline-actions">
+                <button class="icon-btn primary wide-btn" id="btn-save-settings-main"><span class="material-icons-round">save</span><span>儲存並預載</span></button>
+                <button class="icon-btn wide-btn" id="btn-reload-bootstrap"><span class="material-icons-round">sync</span><span>重新讀取</span></button>
+              </div>
+              <div class="inline-status" id="settings-status-text">尚未讀取設定</div>
             </div>
-            <div class="setting-section" data-setting="export">
-              <h3>報表匯出</h3>
+
+            <div class="setting-section" data-setting="security">
+              <h3>AES / 金鑰設定</h3>
+              <div class="setting-field-grid">
+                <label class="setting-field">
+                  <span>AES Key</span>
+                  <input type="text" id="setting-aesKey" placeholder="輸入 AES Key" />
+                </label>
+                <label class="setting-field">
+                  <span>AES IV</span>
+                  <input type="text" id="setting-aesIv" placeholder="輸入 AES IV" />
+                </label>
+              </div>
+              <div class="hint-text">兩個 ID 與 AES Key / IV 會一併存到同一個「AES_KEY_IV設定」分頁，方便開頁時先預載。</div>
+            </div>
+
+            <div class="setting-section" data-setting="notes">
+              <h3>聯絡與備註分頁</h3>
               <div class="setting-row">
-                <span>匯出包含聯絡人資訊</span>
-                <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
+                <span>系統會自動建立「旅行社資料」分頁，保存：旅行社名稱、更新時間、聯絡方式、備註、串接欄 1~3、聯絡人、電話、Email、啟用狀態。</span>
               </div>
             </div>
           </div>
@@ -255,13 +172,12 @@
 
         <section class="toolbar glass-soft">
           <div class="toolbar-left">
-            <input type="text" placeholder="搜尋旅行社、聯絡人、電話、備註..." />
+            <input type="text" id="agency-search-input" placeholder="搜尋旅行社、聯絡方式、備註、串接欄..." />
           </div>
           <div class="toolbar-right">
-            <button class="chip active">全部</button>
-            <button class="chip">高流量</button>
-            <button class="chip">需關注</button>
-            <button class="chip">本月新增</button>
+            <button class="chip active" data-agency-filter="all">全部</button>
+            <button class="chip" data-agency-filter="warn">需關注</button>
+            <button class="chip" data-agency-filter="missing">缺資料</button>
           </div>
         </section>
 
@@ -269,8 +185,9 @@
           <div class="panel-head">
             <div>
               <div class="panel-title">旅行社資料總表</div>
-              <div class="panel-sub">之後可直接接你的 Google Sheet / GAS 資料</div>
+              <div class="panel-sub">今日入場來自 OCR 當日票券序號比對；總切票數來自 IssueTicketDB。</div>
             </div>
+            <div class="panel-sub" id="agency-last-updated">尚未載入</div>
           </div>
           <div class="table-wrap">
             <table>
@@ -278,50 +195,16 @@
                 <tr>
                   <th>旅行社</th>
                   <th>今日入場</th>
-                  <th>本月切票</th>
+                  <th>總切票數</th>
                   <th>剩餘票數</th>
                   <th>聯絡方式</th>
                   <th>備註</th>
                   <th>狀態</th>
+                  <th>選項</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td>海風旅遊</td>
-                  <td>83</td>
-                  <td>1,420</td>
-                  <td>228</td>
-                  <td>王小姐 / 0912-345-678</td>
-                  <td>常有臨時追加，需保留彈性</td>
-                  <td><span class="tag ok">穩定</span></td>
-                </tr>
-                <tr>
-                  <td>藍海假期</td>
-                  <td>51</td>
-                  <td>1,180</td>
-                  <td>74</td>
-                  <td>陳先生 / 0988-111-222</td>
-                  <td>票量偏低，可能需補票</td>
-                  <td><span class="tag warn">注意</span></td>
-                </tr>
-                <tr>
-                  <td>離島玩家</td>
-                  <td>129</td>
-                  <td>2,060</td>
-                  <td>420</td>
-                  <td>許小姐 / 0933-456-999</td>
-                  <td>團客多，需注意尖峰時段</td>
-                  <td><span class="tag ok">穩定</span></td>
-                </tr>
-                <tr>
-                  <td>鯨魚旅行社</td>
-                  <td>19</td>
-                  <td>320</td>
-                  <td>16</td>
-                  <td>林先生 / 0966-565-232</td>
-                  <td>聯絡資訊待更新</td>
-                  <td><span class="tag danger">缺資料</span></td>
-                </tr>
+              <tbody id="agency-table-body">
+                <tr><td colspan="8" class="empty-cell">載入中...</td></tr>
               </tbody>
             </table>
           </div>
@@ -331,253 +214,96 @@
       <section class="page-view" data-view="daily">
         <header class="page-head">
           <div class="page-head-left">
-            <button class="icon-btn subtle setting-trigger" title="當日票種設定" aria-label="當日票種設定">
-              <span class="material-icons-round">settings</span>
-            </button>
-            <div>
-              <div class="eyebrow">DAILY REPORT</div>
-              <h1>當日票種入場</h1>
-              <p>不同票種入場狀況、勾選、報表連結與下載集中在此。</p>
-            </div>
-          </div>
-          <div class="page-actions">
-            <button class="icon-btn" title="搜尋"><span class="material-icons-round">search</span></button>
-            <button class="icon-btn" title="篩選"><span class="material-icons-round">filter_alt</span></button>
-            <button class="icon-btn" title="開啟報表"><span class="material-icons-round">link</span></button>
-            <button class="icon-btn primary" title="下載全部"><span class="material-icons-round">download</span></button>
+            <button class="icon-btn subtle setting-trigger" title="當日票種設定" aria-label="當日票種設定"><span class="material-icons-round">settings</span></button>
+            <div><div class="eyebrow">DAILY REPORT</div><h1>當日票種入場</h1><p>此頁暫時保留原版示意。</p></div>
           </div>
         </header>
-
-        <div class="page-settings-panel glass">
-          <div class="settings-sidebar">
-            <button class="settings-tab active" data-setting-target="sync">同步設定</button>
-          </div>
-          <div class="settings-body">
-            <div class="setting-section active" data-setting="sync">
-              <h3>自動同步 Google Sheet</h3>
-              <div class="setting-row">
-                <span>每日結算自動寫入報表</span>
-                <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <section class="ticket-card-grid">
-          <article class="ticket-work-card glass">
-            <div class="ticket-work-top">
-              <label class="check-wrap"><input type="checkbox" checked /><span>全票</span></label>
-              <span class="tag ok">正常</span>
-            </div>
-            <div class="ticket-numbers"><strong>642</strong><span>今日入場</span></div>
-            <div class="mini-meta">報表連結：已建立</div>
-            <div class="card-actions-row">
-              <button class="icon-btn" title="查看報表"><span class="material-icons-round">description</span></button>
-              <button class="icon-btn" title="開啟連結"><span class="material-icons-round">open_in_new</span></button>
-              <button class="icon-btn" title="下載"><span class="material-icons-round">download</span></button>
-            </div>
-          </article>
-
-          <article class="ticket-work-card glass">
-            <div class="ticket-work-top">
-              <label class="check-wrap"><input type="checkbox" checked /><span>優待票</span></label>
-              <span class="tag ok">正常</span>
-            </div>
-            <div class="ticket-numbers"><strong>311</strong><span>今日入場</span></div>
-            <div class="mini-meta">報表連結：已建立</div>
-            <div class="card-actions-row">
-              <button class="icon-btn" title="查看報表"><span class="material-icons-round">description</span></button>
-              <button class="icon-btn" title="開啟連結"><span class="material-icons-round">open_in_new</span></button>
-              <button class="icon-btn" title="下載"><span class="material-icons-round">download</span></button>
-            </div>
-          </article>
-
-          <article class="ticket-work-card glass">
-            <div class="ticket-work-top">
-              <label class="check-wrap"><input type="checkbox" /><span>團體票</span></label>
-              <span class="tag warn">待確認</span>
-            </div>
-            <div class="ticket-numbers"><strong>216</strong><span>今日入場</span></div>
-            <div class="mini-meta">報表連結：尚未掛載</div>
-            <div class="card-actions-row">
-              <button class="icon-btn" title="查看報表"><span class="material-icons-round">description</span></button>
-              <button class="icon-btn" title="開啟連結"><span class="material-icons-round">open_in_new</span></button>
-              <button class="icon-btn" title="下載"><span class="material-icons-round">download</span></button>
-            </div>
-          </article>
-
-          <article class="ticket-work-card glass">
-            <div class="ticket-work-top">
-              <label class="check-wrap"><input type="checkbox" checked /><span>洄游卡</span></label>
-              <span class="tag ok">正常</span>
-            </div>
-            <div class="ticket-numbers"><strong>163</strong><span>今日入場</span></div>
-            <div class="mini-meta">報表連結：已建立</div>
-            <div class="card-actions-row">
-              <button class="icon-btn" title="查看報表"><span class="material-icons-round">description</span></button>
-              <button class="icon-btn" title="開啟連結"><span class="material-icons-round">open_in_new</span></button>
-              <button class="icon-btn" title="下載"><span class="material-icons-round">download</span></button>
-            </div>
-          </article>
-        </section>
       </section>
 
       <section class="page-view" data-view="membership">
         <header class="page-head">
           <div class="page-head-left">
-            <button class="icon-btn subtle setting-trigger" title="洄游卡設定" aria-label="洄游卡設定">
-              <span class="material-icons-round">settings</span>
-            </button>
-            <div>
-              <div class="eyebrow">MEMBERSHIP</div>
-              <h1>洄游卡資料</h1>
-              <p>會員總量、使用次數、效期、最近入場資料可在同頁查看。</p>
-            </div>
-          </div>
-          <div class="page-actions">
-            <button class="icon-btn" title="搜尋會員"><span class="material-icons-round">search</span></button>
-            <button class="icon-btn" title="篩選"><span class="material-icons-round">filter_alt</span></button>
-            <button class="icon-btn" title="新增會員"><span class="material-icons-round">person_add</span></button>
-            <button class="icon-btn primary" title="下載會員"><span class="material-icons-round">download</span></button>
+            <button class="icon-btn subtle setting-trigger" title="洄游卡設定" aria-label="洄游卡設定"><span class="material-icons-round">settings</span></button>
+            <div><div class="eyebrow">MEMBERSHIP</div><h1>洄游卡資料</h1><p>此頁暫時保留原版示意。</p></div>
           </div>
         </header>
-
-        <div class="page-settings-panel glass">
-          <div class="settings-sidebar">
-            <button class="settings-tab active" data-setting-target="notify">通知設定</button>
-          </div>
-          <div class="settings-body">
-            <div class="setting-section active" data-setting="notify">
-              <h3>到期提醒</h3>
-              <div class="setting-row">
-                <span>自動高亮 7 日內到期會員</span>
-                <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <section class="stats-grid three">
-          <article class="metric-card glass"><span>有效會員</span><strong>4,288</strong><small>本月新增 86 位</small></article>
-          <article class="metric-card glass"><span>今日使用</span><strong>163</strong><small>高峰時段 14:00</small></article>
-          <article class="metric-card glass accent-warn"><span>即將到期</span><strong>12</strong><small>7 日內到期</small></article>
-        </section>
-
-        <section class="panel glass table-panel">
-          <div class="panel-head">
-            <div>
-              <div class="panel-title">會員最近紀錄</div>
-              <div class="panel-sub">這裡可以之後加上搜尋條件與詳細頁連結</div>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>卡號</th>
-                  <th>姓名</th>
-                  <th>方案</th>
-                  <th>最近入場</th>
-                  <th>效期</th>
-                  <th>狀態</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td>HY-001288</td><td>王小明</td><td>年卡</td><td>2026-04-11 14:08</td><td>2026-08-20</td><td><span class="tag ok">有效</span></td></tr>
-                <tr><td>HY-001532</td><td>陳小安</td><td>雙人卡</td><td>2026-04-11 15:12</td><td>2026-04-18</td><td><span class="tag warn">快到期</span></td></tr>
-                <tr><td>HY-001890</td><td>林美惠</td><td>家庭卡</td><td>2026-04-10 13:22</td><td>2026-11-02</td><td><span class="tag ok">有效</span></td></tr>
-                <tr><td>HY-000932</td><td>郭先生</td><td>年卡</td><td>2026-03-29 11:01</td><td>2026-04-09</td><td><span class="tag danger">已過期</span></td></tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
       </section>
 
       <section class="page-view" data-view="special">
         <header class="page-head">
           <div class="page-head-left">
-            <button class="icon-btn subtle setting-trigger" title="特殊票設定" aria-label="特殊票設定">
-              <span class="material-icons-round">settings</span>
-            </button>
-            <div>
-              <div class="eyebrow">SPECIAL TICKETS</div>
-              <h1>特殊票種資料</h1>
-              <p>免費票、招待票、公關票、異常票的紀錄與狀態整合。</p>
-            </div>
-          </div>
-          <div class="page-actions">
-            <button class="icon-btn" title="搜尋"><span class="material-icons-round">search</span></button>
-            <button class="icon-btn" title="篩選"><span class="material-icons-round">filter_alt</span></button>
-            <button class="icon-btn" title="異常提醒"><span class="material-icons-round">notification_important</span></button>
-            <button class="icon-btn primary" title="下載特殊票資料"><span class="material-icons-round">download</span></button>
+            <button class="icon-btn subtle setting-trigger" title="特殊票設定" aria-label="特殊票設定"><span class="material-icons-round">settings</span></button>
+            <div><div class="eyebrow">SPECIAL TICKETS</div><h1>特殊票種資料</h1><p>此頁暫時保留原版示意。</p></div>
           </div>
         </header>
-
-        <div class="page-settings-panel glass">
-          <div class="settings-sidebar">
-            <button class="settings-tab active" data-setting-target="audit">稽核設定</button>
-          </div>
-          <div class="settings-body">
-            <div class="setting-section active" data-setting="audit">
-              <h3>異常票稽核</h3>
-              <div class="setting-row">
-                <span>自動攔截無備註之招待票</span>
-                <label class="toggle-switch"><input type="checkbox" checked><span class="slider"></span></label>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <section class="special-grid">
-          <article class="special-card glass danger-border">
-            <div class="special-top"><strong>招待票</strong><span class="tag danger">需複核</span></div>
-            <p>今日共 18 張，其中 2 張來源備註不足。</p>
-            <div class="special-meta">最近異常：2026-04-11 13:42</div>
-          </article>
-          <article class="special-card glass">
-            <div class="special-top"><strong>免費票</strong><span class="tag ok">正常</span></div>
-            <p>今日共 42 張，主要來自未滿 6 歲兒童。</p>
-            <div class="special-meta">最近更新：2026-04-11 16:10</div>
-          </article>
-          <article class="special-card glass accent-warn">
-            <div class="special-top"><strong>合作票</strong><span class="tag warn">待確認</span></div>
-            <p>有 3 筆合作來源尚未填完整備註。</p>
-            <div class="special-meta">最近更新：2026-04-11 15:48</div>
-          </article>
-        </section>
-
-        <section class="panel glass table-panel">
-          <div class="panel-head">
-            <div>
-              <div class="panel-title">特殊票明細</div>
-              <div class="panel-sub">未來可加入指向原始報表、核銷紀錄與處理流程</div>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>時間</th>
-                  <th>票種</th>
-                  <th>數量</th>
-                  <th>來源</th>
-                  <th>備註</th>
-                  <th>狀態</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td>09:12</td><td>免費票</td><td>12</td><td>親子入場</td><td>未滿 6 歲</td><td><span class="tag ok">正常</span></td></tr>
-                <tr><td>11:48</td><td>招待票</td><td>4</td><td>合作單位</td><td>備註不足，待補</td><td><span class="tag warn">待確認</span></td></tr>
-                <tr><td>13:42</td><td>招待票</td><td>2</td><td>未知</td><td>來源未填</td><td><span class="tag danger">異常</span></td></tr>
-                <tr><td>15:05</td><td>合作票</td><td>6</td><td>旅遊活動</td><td>等活動單位補件</td><td><span class="tag warn">待確認</span></td></tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
       </section>
     </main>
   </div>
 
-  <script src="./Web.js"></script>
+  <div class="toast" id="toast"></div>
+
+  <template id="agency-action-template">
+    <tr class="agency-detail-row">
+      <td colspan="8">
+        <div class="agency-detail-panel glass-soft">
+          <div class="agency-detail-grid">
+            <div class="detail-card">
+              <div class="detail-title">新增切票</div>
+              <div class="detail-form-grid two-col">
+                <label class="setting-field"><span>切票時間</span><input type="text" class="issue-time-input" placeholder="yyyy-MM-dd HH:mm:ss 或留空用現在" /></label>
+                <label class="setting-field"><span>起始票號</span><input type="text" class="issue-start-input" placeholder="例如 B0030001" /></label>
+                <label class="setting-field"><span>張數</span><input type="text" class="issue-qty-input" placeholder="例如 1000" /></label>
+                <label class="setting-field"><span>迄止票號</span><input type="text" class="issue-end-input" placeholder="可留空自動推算" /></label>
+              </div>
+              <div class="setting-inline-actions">
+                <button class="icon-btn primary wide-btn action-create-issue"><span class="material-icons-round">add</span><span>新增切票</span></button>
+              </div>
+            </div>
+
+            <div class="detail-card">
+              <div class="detail-title">歷史表單下載</div>
+              <div class="detail-form-grid two-col">
+                <label class="setting-field"><span>開始日期</span><input type="date" class="history-from-input" /></label>
+                <label class="setting-field"><span>結束日期</span><input type="date" class="history-to-input" /></label>
+              </div>
+              <div class="setting-inline-actions">
+                <button class="icon-btn wide-btn action-download-history"><span class="material-icons-round">download</span><span>下載歷史表單</span></button>
+              </div>
+            </div>
+
+            <div class="detail-card">
+              <div class="detail-title">串接口參數</div>
+              <div class="mini-kv-list action-connector-box"></div>
+            </div>
+
+            <div class="detail-card">
+              <div class="detail-title">加密參數</div>
+              <div class="mini-kv-list action-encrypt-box"></div>
+            </div>
+          </div>
+
+          <div class="detail-card contact-editor-card">
+            <div class="detail-title">聯絡 / 備註編輯</div>
+            <div class="detail-form-grid three-col">
+              <label class="setting-field"><span>聯絡方式</span><input type="text" class="contact-input" /></label>
+              <label class="setting-field"><span>聯絡人</span><input type="text" class="contact-person-input" /></label>
+              <label class="setting-field"><span>電話</span><input type="text" class="contact-phone-input" /></label>
+              <label class="setting-field"><span>Email</span><input type="text" class="contact-email-input" /></label>
+              <label class="setting-field"><span>串接欄1</span><input type="text" class="connector1-input" /></label>
+              <label class="setting-field"><span>串接欄2</span><input type="text" class="connector2-input" /></label>
+              <label class="setting-field"><span>串接欄3</span><input type="text" class="connector3-input" /></label>
+              <label class="setting-field"><span>啟用狀態</span><input type="text" class="enabled-input" placeholder="啟用 / 停用" /></label>
+              <label class="setting-field full-span"><span>備註</span><input type="text" class="remark-input" /></label>
+            </div>
+            <div class="setting-inline-actions">
+              <button class="icon-btn primary wide-btn action-save-contact"><span class="material-icons-round">save</span><span>儲存聯絡與備註</span></button>
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>
+  </template>
+
+  <script src="./004.js"></script>
 </body>
 </html>
