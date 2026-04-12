@@ -3,6 +3,13 @@ const CONFIG = {
   storagePrefix: 'ticketScanner_v3',
   defaultAutoSyncMinutes: 10,
   timezone: 'Asia/Taipei',
+
+  // 後台入口（登入成功後跳轉）
+  adminWebUrl: './Web.html',
+
+  // 新後台專用的 Web.gs Web App URL
+  // 這裡請改成「新試算表綁定的 Web.gs」部署網址
+  adminApiUrl: 'https://script.google.com/macros/s/AKfycbzGS2JNofrdwCAyEBeaYBmQumUDi4RHWU2zwapODzl9nF5BIBXSTSytaSXHyKFoCYed/exec',
 };
 
 const state = {
@@ -970,15 +977,59 @@ async function submitDesktopLogin() {
   if (els.desktopLoginBtn) els.desktopLoginBtn.disabled = true;
   setEntryMessage('登入中...');
 
-try {
-  const res = await apiRequest('loginFrontDesk', { account, password }, 'POST');
-  grantAccess('desktop', res.user || { account: account, name: account });
-  window.location.href = './Web.html';
-} catch (error) {
-  setEntryMessage(error.message || '登入失敗', 'error');
-} finally {
-  if (els.desktopLoginBtn) els.desktopLoginBtn.disabled = false;
+  try {
+    const res = await apiRequest('loginFrontDesk', { account, password }, 'POST');
+    const loginUser = res.user || { account, name: account };
+    const redirectUrl = buildAdminRedirectUrl_(res, loginUser);
+
+    grantAccess('desktop', loginUser);
+    persistAdminJumpContext_(res, loginUser);
+    window.location.href = redirectUrl;
+  } catch (error) {
+    setEntryMessage(error.message || '登入失敗', 'error');
+  } finally {
+    if (els.desktopLoginBtn) els.desktopLoginBtn.disabled = false;
+  }
 }
+
+function buildAdminRedirectUrl_(loginRes, loginUser) {
+  const adminWebUrl = String(loginRes?.adminWebUrl || CONFIG.adminWebUrl || './Web.html').trim();
+  const adminApiUrl = String(loginRes?.adminApiUrl || CONFIG.adminApiUrl || '').trim();
+
+  const url = new URL(adminWebUrl, window.location.href);
+
+  if (adminApiUrl && !adminApiUrl.includes('PASTE_NEW_WEB_GS_EXEC_URL_HERE')) {
+    url.searchParams.set('api', adminApiUrl);
+  }
+
+  if (loginUser?.account) {
+    url.searchParams.set('fromAccount', loginUser.account);
+  }
+  if (loginUser?.name) {
+    url.searchParams.set('fromName', loginUser.name);
+  }
+
+  url.searchParams.set('fromMode', 'desktop-old-login');
+  return url.toString();
+}
+
+function persistAdminJumpContext_(loginRes, loginUser) {
+  const adminApiUrl = String(loginRes?.adminApiUrl || CONFIG.adminApiUrl || '').trim();
+  const adminContext = {
+    adminApiUrl: adminApiUrl && !adminApiUrl.includes('PASTE_NEW_WEB_GS_EXEC_URL_HERE') ? adminApiUrl : '',
+    fromAccount: loginUser?.account || '',
+    fromName: loginUser?.name || '',
+    loggedAt: new Date().toISOString(),
+  };
+
+  try {
+    sessionStorage.setItem('AGENCY_ADMIN_BOOTSTRAP', JSON.stringify(adminContext));
+    if (adminContext.adminApiUrl) {
+      localStorage.setItem('AGENCY_ADMIN_API_URL', adminContext.adminApiUrl);
+    }
+  } catch (error) {
+    console.warn('後台跳轉資訊寫入失敗', error);
+  }
 }
 
 function toggleBluetooth() {
