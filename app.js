@@ -1,5 +1,5 @@
 const CONFIG = {
-  apiBaseUrl: 'https://script.google.com/macros/s/AKfycbwoQNYqFjGK3Ncq9iuKnMYOmhLu8QB48P7yu4Wm2eMfepZELDW3UJs43UuRTxLdonI1kw/exec',
+  apiBaseUrl: 'https://script.google.com/macros/s/AKfycbybGH94Lif7EO96mf1sFb7dqE02Dm2TroLW1MvFAMgyBYUwMBiWvE0favv8hw77GlMhjQ/exec',
   storagePrefix: 'ticketScanner_v3',
   defaultAutoSyncMinutes: 10,
   timezone: 'Asia/Taipei',
@@ -22,6 +22,7 @@ const state = {
   scanBuffer: '',
   scanTimeout: null,
   uiReady: false,
+  todayVisitorCount: 0,
 
   // camera
   scannerModalEl: null,
@@ -49,7 +50,9 @@ function init() {
   ensureScannerModal();
   bindEvents();
   loadFromStorage();
+  state.todayVisitorCount = getLocalSuccessCount();
   renderLogList();
+  renderTodayVisitorCount();
   applyAutoSyncInterval(state.systemSettings.autoSyncMinutes);
   updateSyncStatus('待機中');
   hideUserInfo();
@@ -62,6 +65,7 @@ function init() {
 
   performSystemCheck();
   fetchSystemSettings();
+  fetchTodayStats();
 
   if (
     Object.keys(state.localValidationDB).length === 0 ||
@@ -109,6 +113,7 @@ function cacheDom() {
   els.desktopAccountInput = document.getElementById('desktopAccountInput');
   els.desktopPasswordInput = document.getElementById('desktopPasswordInput');
   els.entryMessage = document.getElementById('entryMessage');
+  els.todayVisitorCount = document.getElementById('todayVisitorCount');
 }
 
 function ensureScannerModal() {
@@ -290,6 +295,22 @@ function applyAutoSyncInterval(minutes) {
 function updateSyncStatus(text, isBlinking = false) {
   if (els.syncText) els.syncText.innerText = text;
   if (els.syncDot) els.syncDot.classList.toggle('syncing', Boolean(isBlinking));
+}
+
+function getLocalSuccessCount() {
+  return state.localHistory.filter((item) => item && item.status === 'ok').length;
+}
+
+function renderTodayVisitorCount(count) {
+  const resolvedCount = Number.isFinite(Number(count))
+    ? Math.max(0, Number(count))
+    : Math.max(Number(state.todayVisitorCount || 0), getLocalSuccessCount());
+
+  state.todayVisitorCount = resolvedCount;
+
+  if (els.todayVisitorCount) {
+    els.todayVisitorCount.textContent = String(resolvedCount);
+  }
 }
 
 function setDisplay(text, status = 'waiting') {
@@ -496,6 +517,7 @@ function pushBatchRecords(items) {
   });
 
   saveToStorage();
+  renderTodayVisitorCount();
 
   if (els.logList) {
     const frag = document.createDocumentFragment();
@@ -818,6 +840,7 @@ function pushRecord(record, originalRaw) {
     raw: originalRaw || record.code,
   });
   saveToStorage();
+  renderTodayVisitorCount();
   addLogToUI(record);
 }
 
@@ -855,6 +878,7 @@ function clearLogs() {
   state.uploadQueue = [];
   saveToStorage();
   renderLogList();
+  fetchTodayStats();
   addSystemLog('本機紀錄已清除');
 }
 
@@ -1447,6 +1471,20 @@ async function fetchSystemSettings() {
   }
 }
 
+async function fetchTodayStats() {
+  try {
+    const res = await apiRequest('getTodayStats', {}, 'GET');
+    if (typeof res.todayVisitorCount !== 'undefined') {
+      renderTodayVisitorCount(res.todayVisitorCount);
+    } else {
+      renderTodayVisitorCount();
+    }
+  } catch (error) {
+    console.warn('讀取當日進場人數失敗', error);
+    renderTodayVisitorCount();
+  }
+}
+
 function autoSync() {
   if (state.uploadQueue.length === 0) return;
   forceSync();
@@ -1473,6 +1511,12 @@ async function forceSync() {
       }));
     }
 
+    if (typeof res.todayVisitorCount !== 'undefined') {
+      state.todayVisitorCount = Number(res.todayVisitorCount) || 0;
+    } else {
+      state.todayVisitorCount = getLocalSuccessCount();
+    }
+
     if (res.validation) state.localValidationDB = res.validation;
     if (res.whitelist) state.localWhiteListRules = res.whitelist;
     if (res.soundRules) state.localSoundRules = res.soundRules;
@@ -1483,6 +1527,7 @@ async function forceSync() {
 
     saveToStorage();
     renderLogList();
+    renderTodayVisitorCount();
     updateSyncStatus(res.message || '同步完成');
     window.setTimeout(() => updateSyncStatus('系統待機'), 3000);
   } catch (error) {
