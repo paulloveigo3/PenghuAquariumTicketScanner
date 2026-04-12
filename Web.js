@@ -52,6 +52,12 @@
     btn.addEventListener('click', () => setView(btn.dataset.viewTarget));
   });
 
+  const queryApiUrl = new URLSearchParams(location.search).get('api');
+  if (queryApiUrl) {
+    sessionStorage.setItem('AGENCY_ADMIN_API_URL', queryApiUrl);
+    localStorage.setItem('AGENCY_ADMIN_API_URL', queryApiUrl);
+  }
+
   const hash = (location.hash || '').replace('#', '').trim();
   setView(views.some(v => v.dataset.view === hash) ? hash : 'dashboard', false);
 
@@ -135,6 +141,14 @@
     state.toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2400);
   }
 
+  function resolveApiUrl() {
+    const urlFromQuery = new URLSearchParams(location.search).get('api');
+    const urlFromWindow = window.AGENCY_ADMIN_API_URL || '';
+    const urlFromSession = sessionStorage.getItem('AGENCY_ADMIN_API_URL') || '';
+    const urlFromLocal = localStorage.getItem('AGENCY_ADMIN_API_URL') || '';
+    return urlFromQuery || urlFromWindow || urlFromSession || urlFromLocal || location.href;
+  }
+
   async function api(action, payload) {
     if (window.google && google.script && google.script.run) {
       return new Promise((resolve, reject) => {
@@ -145,7 +159,7 @@
       });
     }
 
-    const baseUrl = window.AGENCY_ADMIN_API_URL || location.href;
+    const baseUrl = resolveApiUrl();
     const response = await fetch(baseUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
