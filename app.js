@@ -4,8 +4,8 @@ const CONFIG = {
   defaultAutoSyncMinutes: 10,
   timezone: 'Asia/Taipei',
 
-  // 後台入口（登入成功後跳轉）
-  adminApiUrl: 'https://script.google.com/macros/s/AKfycbweuDFUCDBfTnhhZDqDWgf6VaOucvZuTvPWRbQBZnCVSUnBhyy6xZv8OCElIqr_PoKe/exec',
+  // 後台 GAS Web App 入口（登入成功後直接跳轉）
+  adminExecUrl: 'https://script.google.com/macros/s/AKfycbweuDFUCDBfTnhhZDqDWgf6VaOucvZuTvPWRbQBZnCVSUnBhyy6xZv8OCElIqr_PoKe/exec',
 };
 
 const state = {
@@ -989,14 +989,17 @@ async function submitDesktopLogin() {
 }
 
 function buildAdminRedirectUrl_(loginRes, loginUser) {
-  const adminWebUrl = String(loginRes?.adminWebUrl || CONFIG.adminWebUrl || './Web.html').trim();
-  const adminApiUrl = String(loginRes?.adminApiUrl || CONFIG.adminApiUrl || '').trim();
+  const adminExecUrl = String(loginRes?.adminExecUrl || CONFIG.adminExecUrl || '').trim();
 
-  const url = new URL(adminWebUrl, window.location.href);
-
-  if (adminApiUrl && !adminApiUrl.includes('PASTE_NEW_WEB_GS_EXEC_URL_HERE')) {
-    url.searchParams.set('api', adminApiUrl);
+  if (!adminExecUrl) {
+    throw new Error('尚未設定後台 GAS Web App URL');
   }
+
+  if (adminExecUrl.includes('PASTE_NEW_WEB_GS_EXEC_URL_HERE')) {
+    throw new Error('請先把 adminExecUrl 改成新的後台 Web App 網址');
+  }
+
+  const url = new URL(adminExecUrl);
 
   if (loginUser?.account) {
     url.searchParams.set('fromAccount', loginUser.account);
@@ -1010,9 +1013,9 @@ function buildAdminRedirectUrl_(loginRes, loginUser) {
 }
 
 function persistAdminJumpContext_(loginRes, loginUser) {
-  const adminApiUrl = String(loginRes?.adminApiUrl || CONFIG.adminApiUrl || '').trim();
+  const adminExecUrl = String(loginRes?.adminExecUrl || CONFIG.adminExecUrl || '').trim();
   const adminContext = {
-    adminApiUrl: adminApiUrl && !adminApiUrl.includes('PASTE_NEW_WEB_GS_EXEC_URL_HERE') ? adminApiUrl : '',
+    adminExecUrl: adminExecUrl && !adminExecUrl.includes('PASTE_NEW_WEB_GS_EXEC_URL_HERE') ? adminExecUrl : '',
     fromAccount: loginUser?.account || '',
     fromName: loginUser?.name || '',
     loggedAt: new Date().toISOString(),
@@ -1020,9 +1023,6 @@ function persistAdminJumpContext_(loginRes, loginUser) {
 
   try {
     sessionStorage.setItem('AGENCY_ADMIN_BOOTSTRAP', JSON.stringify(adminContext));
-    if (adminContext.adminApiUrl) {
-      localStorage.setItem('AGENCY_ADMIN_API_URL', adminContext.adminApiUrl);
-    }
   } catch (error) {
     console.warn('後台跳轉資訊寫入失敗', error);
   }
