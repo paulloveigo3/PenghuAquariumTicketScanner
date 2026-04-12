@@ -9,7 +9,7 @@ const CONFIG = {
 
   // 新後台專用的 Web.gs Web App URL
   // 這裡請改成「新試算表綁定的 Web.gs」部署網址
-  adminApiUrl: 'https://script.google.com/macros/s/AKfycbzGS2JNofrdwCAyEBeaYBmQumUDi4RHWU2zwapODzl9nF5BIBXSTSytaSXHyKFoCYed/exec',
+  adminApiUrl: 'https://script.google.com/macros/s/AKfycbweuDFUCDBfTnhhZDqDWgf6VaOucvZuTvPWRbQBZnCVSUnBhyy6xZv8OCElIqr_PoKe/exec',
 };
 
 const state = {
