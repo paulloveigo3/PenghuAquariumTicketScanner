@@ -13,10 +13,21 @@
 </head>
 <body>
   <div class="header" id="headerBar">
-    <div class="app-title">
-      前台過票系統
-      <span class="version-tag">v3.0</span>
+    <div class="header-left">
+      <div class="app-title">
+        前台過票系統
+        <span class="version-tag">v3.0</span>
+      </div>
     </div>
+
+    <div class="header-center">
+      <div class="today-visitor-chip" id="todayVisitorChip" aria-live="polite">
+        <span class="today-visitor-label">當日來館人數</span>
+        <span class="today-visitor-value" id="todayVisitorCount">--</span>
+        <span class="today-visitor-unit">人</span>
+      </div>
+    </div>
+
     <div class="header-controls">
       <button class="bt-status" id="btStatusBtn" type="button" aria-label="藍牙連線狀態">
         <span class="material-icons-round bt-icon">bluetooth</span>
