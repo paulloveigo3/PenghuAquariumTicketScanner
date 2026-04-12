@@ -5,7 +5,7 @@ const CONFIG = {
   timezone: 'Asia/Taipei',
 
   // 後台 GAS Web App 入口（登入成功後直接跳轉）
-  adminExecUrl: 'https://script.google.com/macros/s/AKfycbywSh0WgQKr6hAxcjfY8kraxly_7jIXQTF8Y8_WvJP4WkZ8HPuQViQpUwoi2ShoQSD2/exec',
+  adminExecUrl: 'https://script.google.com/macros/s/AKfycbwqXjcfGwGLXDj9_gD5Uy-_kCpcFqsax12nsOKkJ_JA6A282iRSq-LLGIoAWs0jk2s/exec',
 };
 
 const state = {
