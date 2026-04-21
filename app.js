@@ -26,6 +26,7 @@ const state = {
   todayTicketSummary: [],
   ticketSummaryOpen: false,
   ticketSummaryLoading: false,
+  themeMode: 'dark',
 
   // camera
   scannerModalEl: null,
@@ -50,6 +51,7 @@ window.addEventListener('DOMContentLoaded', init);
 
 function init() {
   cacheDom();
+  applySavedThemeMode();
   ensureScannerModal();
   bindEvents();
   loadFromStorage();
@@ -76,6 +78,7 @@ function init() {
 function cacheDom() {
   els.body = document.body;
   els.headerBar = document.getElementById('headerBar');
+  els.appTitleBtn = document.getElementById('appTitleBtn');
   els.btStatusBtn = document.getElementById('btStatusBtn');
   els.btText = document.getElementById('btText');
   els.cameraBtn = document.getElementById('cameraBtn');
@@ -150,6 +153,9 @@ function ensureScannerModal() {
 
 function bindEvents() {
   els.headerBar?.addEventListener('click', toggleHistoryView);
+
+  els.appTitleBtn?.addEventListener('click', toggleThemeMode);
+  els.appTitleBtn?.addEventListener('keydown', handleAppTitleKeydown);
 
   els.todayVisitorChip?.addEventListener('click', toggleTicketSummaryPanel);
   els.todayVisitorChip?.addEventListener('keydown', handleTodayVisitorChipKeydown);
@@ -304,6 +310,54 @@ function applyAutoSyncInterval(minutes) {
 function updateSyncStatus(text, isBlinking = false) {
   if (els.syncText) els.syncText.innerText = text;
   if (els.syncDot) els.syncDot.classList.toggle('syncing', Boolean(isBlinking));
+}
+
+function applySavedThemeMode() {
+  let savedMode = 'dark';
+  try {
+    savedMode = localStorage.getItem(storageKey('themeMode')) || 'dark';
+  } catch (error) {
+    savedMode = 'dark';
+  }
+  applyThemeMode(savedMode);
+}
+
+function persistThemeMode() {
+  try {
+    localStorage.setItem(storageKey('themeMode'), state.themeMode);
+  } catch (error) {
+    console.warn('主題儲存失敗', error);
+  }
+}
+
+function applyThemeMode(mode) {
+  const resolvedMode = mode === 'light' ? 'light' : 'dark';
+  state.themeMode = resolvedMode;
+
+  els.body?.classList.toggle('theme-light', resolvedMode === 'light');
+  els.body?.classList.toggle('theme-dark', resolvedMode === 'dark');
+
+  if (els.appTitleBtn) {
+    const modeText = resolvedMode === 'light' ? '日色模式' : '夜色模式';
+    const nextModeText = resolvedMode === 'light' ? '夜色模式' : '日色模式';
+    els.appTitleBtn.setAttribute('aria-label', `目前${modeText}，點擊切換為${nextModeText}`);
+    els.appTitleBtn.setAttribute('title', `目前${modeText}，點擊切換為${nextModeText}`);
+  }
+}
+
+function handleAppTitleKeydown(event) {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  toggleThemeMode(event);
+}
+
+function toggleThemeMode(event) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+
+  const nextMode = state.themeMode === 'light' ? 'dark' : 'light';
+  applyThemeMode(nextMode);
+  persistThemeMode();
 }
 
 function handleTodayVisitorChipKeydown(event) {
