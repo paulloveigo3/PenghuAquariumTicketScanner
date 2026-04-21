@@ -21,7 +21,7 @@
     </div>
 
     <div class="header-center">
-      <div class="today-visitor-chip" id="todayVisitorChip" aria-live="polite">
+      <div class="today-visitor-chip" id="todayVisitorChip" aria-live="polite" role="button" tabindex="0" aria-label="查看當日票種統計">
         <span class="today-visitor-label">當日來館人數</span>
         <span class="today-visitor-value" id="todayVisitorCount">--</span>
         <span class="today-visitor-unit">人</span>
@@ -124,7 +124,30 @@
     </div>
   </div>
 
- 
+
+  <div id="ticketSummaryModal" class="modal stats-modal" aria-hidden="true">
+    <div class="stats-sheet">
+      <div class="stats-header">
+        <div class="stats-header-text">
+          <div class="stats-title">當日票種統計</div>
+          <div class="stats-subtitle" id="ticketSummarySubtitle">依自動售票機編碼統計</div>
+        </div>
+        <button class="icon-btn stats-close-btn" id="ticketSummaryCloseBtn" type="button" aria-label="關閉票種統計">
+          <span class="material-icons-round">close</span>
+        </button>
+      </div>
+
+      <div class="stats-table">
+        <div class="stats-table-head">
+          <div>名稱</div>
+          <div>代號</div>
+          <div>累計數量</div>
+        </div>
+        <div class="stats-table-body" id="ticketSummaryBody"></div>
+      </div>
+    </div>
+  </div>
+
 
   <div id="entry-modal" class="modal active entry-modal" aria-hidden="false">
   <div class="entry-shell">
