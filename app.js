@@ -78,7 +78,8 @@ function init() {
 function cacheDom() {
   els.body = document.body;
   els.headerBar = document.getElementById('headerBar');
-  els.appTitleBtn = document.getElementById('appTitleBtn');
+  els.themeToggleBtn = document.getElementById('themeToggleBtn');
+  els.themeToggleIcon = document.getElementById('themeToggleIcon');
   els.btStatusBtn = document.getElementById('btStatusBtn');
   els.btText = document.getElementById('btText');
   els.cameraBtn = document.getElementById('cameraBtn');
@@ -154,8 +155,8 @@ function ensureScannerModal() {
 function bindEvents() {
   els.headerBar?.addEventListener('click', toggleHistoryView);
 
-  els.appTitleBtn?.addEventListener('click', toggleThemeMode);
-  els.appTitleBtn?.addEventListener('keydown', handleAppTitleKeydown);
+  els.themeToggleBtn?.addEventListener('click', toggleThemeMode);
+  els.themeToggleBtn?.addEventListener('keydown', handleThemeToggleKeydown);
 
   els.todayVisitorChip?.addEventListener('click', toggleTicketSummaryPanel);
   els.todayVisitorChip?.addEventListener('keydown', handleTodayVisitorChipKeydown);
@@ -337,15 +338,20 @@ function applyThemeMode(mode) {
   els.body?.classList.toggle('theme-light', resolvedMode === 'light');
   els.body?.classList.toggle('theme-dark', resolvedMode === 'dark');
 
-  if (els.appTitleBtn) {
+  if (els.themeToggleBtn) {
     const modeText = resolvedMode === 'light' ? '日色模式' : '夜色模式';
     const nextModeText = resolvedMode === 'light' ? '夜色模式' : '日色模式';
-    els.appTitleBtn.setAttribute('aria-label', `目前${modeText}，點擊切換為${nextModeText}`);
-    els.appTitleBtn.setAttribute('title', `目前${modeText}，點擊切換為${nextModeText}`);
+    els.themeToggleBtn.setAttribute('aria-label', `目前${modeText}，點擊切換為${nextModeText}`);
+    els.themeToggleBtn.setAttribute('title', `目前${modeText}，點擊切換為${nextModeText}`);
+  }
+
+  if (els.themeToggleIcon) {
+    els.themeToggleIcon.textContent = resolvedMode === 'light' ? 'light_mode' : 'bedtime';
+  els.themeToggleBtn?.setAttribute('data-theme-state', resolvedMode);
   }
 }
 
-function handleAppTitleKeydown(event) {
+function handleThemeToggleKeydown(event) {
   if (event.key !== 'Enter' && event.key !== ' ') return;
   event.preventDefault();
   toggleThemeMode(event);
