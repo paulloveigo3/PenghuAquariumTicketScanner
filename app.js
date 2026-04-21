@@ -23,6 +23,9 @@ const state = {
   scanTimeout: null,
   uiReady: false,
   todayVisitorCount: 0,
+  todayTicketSummary: [],
+  ticketSummaryOpen: false,
+  ticketSummaryLoading: false,
 
   // camera
   scannerModalEl: null,
@@ -108,6 +111,11 @@ function cacheDom() {
   els.desktopPasswordInput = document.getElementById('desktopPasswordInput');
   els.entryMessage = document.getElementById('entryMessage');
   els.todayVisitorCount = document.getElementById('todayVisitorCount');
+  els.todayVisitorChip = document.getElementById('todayVisitorChip');
+  els.ticketSummaryModal = document.getElementById('ticketSummaryModal');
+  els.ticketSummaryCloseBtn = document.getElementById('ticketSummaryCloseBtn');
+  els.ticketSummaryBody = document.getElementById('ticketSummaryBody');
+  els.ticketSummarySubtitle = document.getElementById('ticketSummarySubtitle');
 }
 
 function ensureScannerModal() {
@@ -142,6 +150,11 @@ function ensureScannerModal() {
 
 function bindEvents() {
   els.headerBar?.addEventListener('click', toggleHistoryView);
+
+  els.todayVisitorChip?.addEventListener('click', toggleTicketSummaryPanel);
+  els.todayVisitorChip?.addEventListener('keydown', handleTodayVisitorChipKeydown);
+  els.ticketSummaryCloseBtn?.addEventListener('click', closeTicketSummaryPanel);
+  els.ticketSummaryModal?.addEventListener('click', handleTicketSummaryBackdropClick);
 
   els.btStatusBtn?.addEventListener('click', (event) => {
     event.stopPropagation();
@@ -204,6 +217,7 @@ function handleDocumentClick(event) {
   if (els.entryModal?.classList.contains('active')) return;
   if (els.keyboardModal?.classList.contains('active')) return;
   if (els.pairingModal?.classList.contains('active')) return;
+  if (els.ticketSummaryModal?.classList.contains('active')) return;
   if (state.scannerModalEl?.classList.contains('active')) return;
   if (event.target === els.keyboardTestInput) return;
   focusTrap();
@@ -290,6 +304,117 @@ function applyAutoSyncInterval(minutes) {
 function updateSyncStatus(text, isBlinking = false) {
   if (els.syncText) els.syncText.innerText = text;
   if (els.syncDot) els.syncDot.classList.toggle('syncing', Boolean(isBlinking));
+}
+
+function handleTodayVisitorChipKeydown(event) {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  toggleTicketSummaryPanel(event);
+}
+
+function handleTicketSummaryBackdropClick(event) {
+  if (event.target === els.ticketSummaryModal) {
+    closeTicketSummaryPanel();
+  }
+}
+
+async function toggleTicketSummaryPanel(event) {
+  event?.stopPropagation?.();
+
+  if (!state.accessGranted && els.entryModal?.classList.contains('active')) {
+    return;
+  }
+  if (state.scannerRunning) return;
+
+  if (state.ticketSummaryOpen) {
+    closeTicketSummaryPanel();
+    return;
+  }
+
+  openTicketSummaryPanel();
+  await fetchTodayTicketSummary(true);
+}
+
+function openTicketSummaryPanel() {
+  if (!els.ticketSummaryModal) return;
+  state.ticketSummaryOpen = true;
+  els.ticketSummaryModal.classList.add('active');
+  els.ticketSummaryModal.setAttribute('aria-hidden', 'false');
+  renderTicketSummaryLoading();
+}
+
+function closeTicketSummaryPanel() {
+  if (!els.ticketSummaryModal) return;
+  state.ticketSummaryOpen = false;
+  els.ticketSummaryModal.classList.remove('active');
+  els.ticketSummaryModal.setAttribute('aria-hidden', 'true');
+  focusTrap();
+}
+
+function renderTicketSummaryLoading() {
+  if (!els.ticketSummaryBody) return;
+  els.ticketSummaryBody.innerHTML = '<div class="stats-loading">讀取當日票種統計中...</div>';
+  updateTicketSummarySubtitle();
+}
+
+function updateTicketSummarySubtitle() {
+  if (!els.ticketSummarySubtitle) return;
+  const total = Number(state.todayVisitorCount || 0);
+  els.ticketSummarySubtitle.textContent = '當日累計 ' + total + ' 人｜隔日自動歸零';
+}
+
+function renderTicketSummaryRows(summary) {
+  if (!els.ticketSummaryBody) return;
+
+  const rows = Array.isArray(summary) ? summary : [];
+  updateTicketSummarySubtitle();
+
+  if (!rows.length) {
+    els.ticketSummaryBody.innerHTML = '<div class="stats-empty">目前沒有可顯示的票種統計</div>';
+    return;
+  }
+
+  const html = rows.map(function (item) {
+    const name = escapeHtml(item.name || '');
+    const code = escapeHtml(item.code || '');
+    const count = Number(item.count || 0);
+    return ''
+      + '<div class="stats-table-row">'
+      +   '<div class="stats-ticket-name">' + name + '</div>'
+      +   '<div class="stats-ticket-code">' + code + '</div>'
+      +   '<div class="stats-ticket-count">' + count + '</div>'
+      + '</div>';
+  }).join('');
+
+  els.ticketSummaryBody.innerHTML = html;
+}
+
+async function fetchTodayTicketSummary(forceRefresh) {
+  if (state.ticketSummaryLoading) return;
+  if (!forceRefresh && state.todayTicketSummary.length) {
+    renderTicketSummaryRows(state.todayTicketSummary);
+    return;
+  }
+
+  state.ticketSummaryLoading = true;
+  renderTicketSummaryLoading();
+
+  try {
+    const res = await apiRequest('getTodayStats', {}, 'GET');
+    if (typeof res.todayVisitorCount !== 'undefined') {
+      renderTodayVisitorCount(res.todayVisitorCount);
+    }
+    state.todayTicketSummary = Array.isArray(res.todayTicketSummary) ? res.todayTicketSummary : [];
+    renderTicketSummaryRows(state.todayTicketSummary);
+  } catch (error) {
+    if (els.ticketSummaryBody) {
+      els.ticketSummaryBody.innerHTML =
+        '<div class="stats-empty">讀取失敗：' + escapeHtml(error.message || '未知錯誤') + '</div>';
+    }
+    updateTicketSummarySubtitle();
+  } finally {
+    state.ticketSummaryLoading = false;
+  }
 }
 
 function getLocalSuccessCount() {
@@ -1474,9 +1599,19 @@ async function fetchTodayStats() {
     } else {
       renderTodayVisitorCount();
     }
+
+    if (Array.isArray(res.todayTicketSummary)) {
+      state.todayTicketSummary = res.todayTicketSummary;
+      if (state.ticketSummaryOpen) {
+        renderTicketSummaryRows(state.todayTicketSummary);
+      }
+    }
   } catch (error) {
     console.warn('讀取當日進場人數失敗', error);
     renderTodayVisitorCount();
+    if (state.ticketSummaryOpen) {
+      renderTicketSummaryRows(state.todayTicketSummary);
+    }
   }
 }
 
@@ -1513,6 +1648,10 @@ async function forceSync(options = {}) {
       state.todayVisitorCount = getLocalSuccessCount();
     }
 
+    if (Array.isArray(res.todayTicketSummary)) {
+      state.todayTicketSummary = res.todayTicketSummary;
+    }
+
     if (res.validation) state.localValidationDB = res.validation;
     if (res.whitelist) state.localWhiteListRules = res.whitelist;
     if (res.soundRules) state.localSoundRules = res.soundRules;
@@ -1524,6 +1663,10 @@ async function forceSync(options = {}) {
     saveToStorage();
     renderLogList();
     renderTodayVisitorCount();
+
+    if (state.ticketSummaryOpen) {
+      renderTicketSummaryRows(state.todayTicketSummary);
+    }
 
     if (!silent) {
       updateSyncStatus(res.message || '同步完成');
