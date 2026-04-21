@@ -1,1293 +1,1758 @@
-:root {
-  --bg-color: #121212;
-  --card-bg: #1e1e1e;
-  --primary: #6c63ff;
-  --success: #00e676;
-  --warning: #ffab00;
-  --error: #ff5252;
-  --text-main: #ffffff;
-  --text-sub: #b0b0b0;
-  --glass: rgba(255, 255, 255, 0.08);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --muted: #7e7e7e;
-}
-
-* {
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
-
-html {
-  height: 100%;
-  width: 100%;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  background-color: var(--bg-color);
-  color: var(--text-main);
-  font-family: 'Noto Sans TC', sans-serif;
-  height: 100vh;
-  height: 100dvh;
-  width: 100%;
-  max-width: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  -webkit-text-size-adjust: 100%;
-  transition: all 0.3s;
-}
-
-
-body,
-.header,
-.footer,
-.display-card,
-.log-container,
-.action-btn,
-.bt-status,
-.cam-btn,
-.icon-btn,
-.today-visitor-chip,
-.user-info-box,
-.stats-sheet,
-.stats-table-row,
-.entry-shell,
-.entry-choice-btn,
-.entry-input,
-.version-tag,
-.app-title,
-.log-row,
-.stats-ticket-count {
-  transition:
-    background-color 0.28s ease,
-    background 0.28s ease,
-    color 0.28s ease,
-    border-color 0.28s ease,
-    box-shadow 0.28s ease,
-    transform 0.15s ease;
-}
-
-body.theme-light {
-  --bg-color: #f5f7fb;
-  --card-bg: #ffffff;
-  --text-main: #111111;
-  --text-sub: #5f6b7a;
-  --glass: rgba(16, 24, 40, 0.05);
-  --glass-border: rgba(16, 24, 40, 0.10);
-  --muted: #7b8694;
-}
-
-body.theme-light .header,
-body.theme-light .footer,
-body.theme-light .log-container,
-body.theme-light .stats-sheet {
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
-}
-
-body.theme-light .display-card {
-  background: linear-gradient(145deg, #ffffff, #f3f6fb);
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
-}
-
-body.theme-light .display-card.success {
-  background: radial-gradient(circle at center, rgba(0, 230, 118, 0.14), #f7fffb);
-}
-
-body.theme-light .display-card.warning {
-  background: radial-gradient(circle at center, rgba(255, 171, 0, 0.14), #fffaf0);
-}
-
-body.theme-light .display-card.error {
-  background: radial-gradient(circle at center, rgba(255, 82, 82, 0.12), #fff7f7);
-}
-
-body.theme-light .user-info-box {
-  background: rgba(16, 24, 40, 0.04);
-  border-color: rgba(16, 24, 40, 0.08);
-}
-
-body.theme-light .info-line {
-  color: #1f2937;
-}
-
-body.theme-light .info-line.sub {
-  color: #64748b;
-}
-
-body.theme-light .log-row {
-  border-bottom-color: rgba(16, 24, 40, 0.08);
-}
-
-body.theme-light .log-time {
-  color: #6b7280;
-}
-
-body.theme-light .log-row.st-sys .log-data {
-  color: #475569;
-}
-
-body.theme-light .action-btn,
-body.theme-light .bt-status,
-body.theme-light .cam-btn,
-body.theme-light .icon-btn,
-body.theme-light .entry-choice-btn,
-body.theme-light .entry-input {
-  color: var(--text-main);
-}
-
-body.theme-light .entry-shell {
-  background: linear-gradient(145deg, #ffffff, #f4f7fc);
-  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.12);
-}
-
-body.theme-light .entry-choice-btn:hover {
-  background: rgba(108, 99, 255, 0.08);
-}
-
-body.theme-light .entry-input {
-  background: rgba(15, 23, 42, 0.03);
-}
-
-body.theme-light .stats-modal,
-body.theme-light .entry-modal,
-body.theme-light .scanner-modal {
-  background: rgba(15, 23, 42, 0.28);
-}
-
-body.theme-light .stats-sheet {
-  background: linear-gradient(145deg, #ffffff, #f4f7fc);
-}
-
-body.theme-light .stats-table-row {
-  background: rgba(15, 23, 42, 0.03);
-  border-color: rgba(15, 23, 42, 0.06);
-}
-
-body.theme-light .stats-ticket-code {
-  color: #4f46e5;
-}
-
-body.theme-light .stats-ticket-count {
-  background: rgba(108, 99, 255, 0.08);
-  border-color: rgba(108, 99, 255, 0.18);
-  color: #111111;
-}
-
-body.theme-light .today-visitor-chip {
-  background: rgba(108, 99, 255, 0.08);
-  border-color: rgba(108, 99, 255, 0.22);
-}
-
-body.theme-light .today-visitor-chip:hover {
-  background: rgba(108, 99, 255, 0.12);
-  border-color: rgba(108, 99, 255, 0.30);
-}
-
-body.theme-light .qr-reader__status_span,
-body.theme-light .scanner-title {
-  color: #ffffff !important;
-}
-
-body.theme-light .app-title:hover {
-  background: rgba(16, 24, 40, 0.05);
-}
-
-
-body.history-mode .main-container {
-  padding-top: 0;
-}
-
-body.history-mode .display-card {
-  display: none;
-}
-
-body.history-mode .log-container {
-  height: 100%;
-}
-
-button,
-input {
-  font: inherit;
-}
-
-button {
-  border: 0;
-}
-
-.header {
-  padding: calc(15px + env(safe-area-inset-top, 0px)) 20px 15px 20px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: 12px;
-  background: var(--card-bg);
-  border-bottom: 1px solid var(--glass-border);
-  z-index: 20;
-  width: 100%;
-  flex: 0 0 auto;
-}
-
-.header-left {
-  min-width: 0;
-  justify-self: start;
-}
-
-.header-center {
-  min-width: 0;
-  justify-self: center;
-}
-
-.app-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 0;
-  font-weight: 700;
-  font-size: 1.1rem;
-  letter-spacing: 1px;
-  white-space: nowrap;
-  color: var(--text-main);
-  cursor: pointer;
-  user-select: none;
-  border-radius: 12px;
-  padding: 6px 10px;
-  margin: -6px -10px;
-  transition:
-    color 0.22s ease,
-    background-color 0.22s ease,
-    box-shadow 0.22s ease,
-    transform 0.15s ease;
-}
-
-.app-title:hover {
-  background: var(--glass);
-}
-
-.app-title:active {
-  transform: scale(0.985);
-}
-
-.app-title:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.22);
-}
-
-.version-tag {
-  display: inline-block;
-  margin-left: 8px;
-  font-size: 0.7rem;
-  color: var(--success);
-  border: 1px solid var(--success);
-  padding: 1px 4px;
-  border-radius: 4px;
-}
-
-.today-visitor-chip {
-  display: inline-flex;
-  cursor: pointer;
-  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
-  align-items: baseline;
-  justify-content: center;
-  gap: 6px;
-  min-height: 36px;
-  padding: 7px 14px;
-  border-radius: 999px;
-  background: rgba(108, 99, 255, 0.1);
-  border: 1px solid rgba(108, 99, 255, 0.28);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
-  text-align: center;
-  white-space: nowrap;
-}
-
-.today-visitor-label {
-  font-size: 0.74rem;
-  color: var(--text-sub);
-  letter-spacing: 0.3px;
-}
-
-.today-visitor-value {
-  font-family: 'Roboto Mono', monospace;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text-main);
-  line-height: 1;
-}
-
-.today-visitor-unit {
-  font-size: 0.76rem;
-  color: var(--text-sub);
-}
-
-.today-visitor-chip:hover {
-  background: rgba(108, 99, 255, 0.16);
-  border-color: rgba(108, 99, 255, 0.4);
-}
-
-.today-visitor-chip:active {
-  transform: scale(0.98);
-}
-
-.today-visitor-chip:focus-visible {
-  outline: none;
-  box-shadow:
-    0 0 0 2px rgba(108, 99, 255, 0.24),
-    inset 0 1px 0 rgba(255,255,255,0.05);
-}
-
-.header-controls {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-self: end;
-}
-
-
-.bt-status,
-.cam-btn,
-.icon-btn {
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  color: var(--text-main);
-  cursor: pointer;
-}
-
-.bt-status {
-  display: flex;
-  align-items: center;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  min-height: 36px;
-}
-
-.bt-icon {
-  font-size: 1.1rem;
-  margin-right: 4px;
-}
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-  background-color: #555;
-  border-radius: 50%;
-  margin-left: 8px;
-}
-
-.bt-connected .status-dot {
-  background-color: var(--success);
-  box-shadow: 0 0 6px var(--success);
-}
-
-.cam-btn,
-.icon-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.main-container {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
-  gap: 15px;
-  min-height: 0;
-  width: 100%;
-  max-width: 100%;
-  overflow: hidden;
-}
-
-.display-card {
-  background: linear-gradient(145deg, #2a2a2a, #222);
-  border-radius: 16px;
-  padding: 16px 18px;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-  gap: 8px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-  border: 1px solid var(--glass-border);
-  min-height: 176px;
-  position: relative;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  overflow: hidden;
-}
-
-.display-label {
-  font-size: 0.6rem;
-  color: var(--text-sub);
-  text-transform: uppercase;
-  margin-bottom: 0;
-  text-align: center;
-  align-self: center;
-  flex: 0 0 auto;
-}
-
-.display-value {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-family: 'Roboto Mono', monospace;
-  font-size: clamp(1.15rem, 4.8vw, 2rem);
-  font-weight: 700;
-  text-align: center;
-  line-height: 1.15;
-  color: var(--text-main);
-  word-break: break-word;
-  overflow-wrap: anywhere;
-}
-
-.display-value.has-subline {
-  gap: 8px;
-}
-
-.display-main-text,
-.display-sub-text {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  white-space: normal;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-}
-
-.display-main-text {
-  font-size: inherit;
-  font-weight: 700;
-  line-height: 1.15;
-}
-
-.display-sub-text {
-  font-family: 'Noto Sans TC', sans-serif;
-  font-size: clamp(0.82rem, 2.8vw, 1rem);
-  font-weight: 600;
-  line-height: 1.35;
-  color: var(--text-sub);
-  letter-spacing: 0.2px;
-}
-
-.user-info-box {
-  margin-top: 6px;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  flex: 0 0 auto;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.info-line,
-.info-line.sub {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  text-align: center;
-  white-space: normal;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-}
-
-.info-line {
-  font-size: 0.95rem;
-  color: #eee;
-  margin-bottom: 4px;
-  font-weight: 500;
-  letter-spacing: 0.3px;
-}
-
-.info-line.sub {
-  font-size: 0.85rem;
-  color: #aaa;
-  font-family: 'Roboto Mono', monospace;
-  margin-bottom: 0;
-}
-
-.display-card.success {
-  border-color: var(--success);
-  background: radial-gradient(circle at center, rgba(0, 230, 118, 0.15), #222);
-}
-
-.display-card.warning {
-  border-color: var(--warning);
-  background: radial-gradient(circle at center, rgba(255, 171, 0, 0.15), #222);
-}
-
-.display-card.error {
-  border-color: var(--error);
-  background: radial-gradient(circle at center, rgba(255, 82, 82, 0.15), #222);
-}
-
-.log-container {
-  flex: 1 1 auto;
-  min-height: 0;
-  background: var(--card-bg);
-  border-radius: 16px;
-  padding: 15px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  border: 1px solid var(--glass-border);
-  width: 100%;
-  max-width: 100%;
-}
-
-.log-title {
-  font-size: 0.8rem;
-  color: var(--text-sub);
-  margin-bottom: 10px;
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 12px;
-  align-items: center;
-}
-
-.sync-status {
-  font-size: 0.7rem;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.sync-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #555;
-  flex: 0 0 auto;
-}
-
-.sync-dot.syncing {
-  background: var(--success);
-  animation: blink 1s infinite;
-}
-
-@keyframes blink {
-  50% {
-    opacity: 0.5;
+const CONFIG = {
+  apiBaseUrl: 'https://script.google.com/macros/s/AKfycbxE_kYBYhfqVW9nZzxwKOr8LGaRxgcaLr5JzltL6SNZ3TmKQFNJl8jQZBnOWbpQYpKmGw/exec',
+  storagePrefix: 'ticketScanner_v3',
+  defaultAutoSyncMinutes: 10,
+  timezone: 'Asia/Taipei',
+
+  // 後台 GAS Web App 入口（登入成功後直接跳轉）
+  adminExecUrl: 'https://script.google.com/macros/s/AKfycbwqXjcfGwGLXDj9_gD5Uy-_kCpcFqsax12nsOKkJ_JA6A282iRSq-LLGIoAWs0jk2s/exec',
+};
+
+const state = {
+  wakeLock: null,
+  html5Qrcode: null,
+  isConnected: false,
+  localHistory: [],
+  uploadQueue: [],
+  localValidationDB: {},
+  localWhiteListRules: [],
+  localSoundRules: {},
+  systemSettings: { autoSyncMinutes: CONFIG.defaultAutoSyncMinutes },
+  autoSyncTimer: null,
+  scanBuffer: '',
+  scanTimeout: null,
+  uiReady: false,
+  todayVisitorCount: 0,
+  todayTicketSummary: [],
+  ticketSummaryOpen: false,
+  ticketSummaryLoading: false,
+  themeMode: 'dark',
+
+  // camera
+  scannerModalEl: null,
+  scannerReaderEl: null,
+  scannerCloseBtnEl: null,
+  scannerStatusEl: null,
+  scannerRunning: false,
+  cameraLocked: false,
+
+  accessGranted: false,
+  entryMode: '',
+  desktopUser: null,
+
+  rangeModeArmed: false,
+  rangeAnchor: null,
+  lastArmableTicket: null,
+};
+
+const els = {};
+
+window.addEventListener('DOMContentLoaded', init);
+
+function init() {
+  cacheDom();
+  applySavedThemeMode();
+  ensureScannerModal();
+  bindEvents();
+  loadFromStorage();
+  state.todayVisitorCount = getLocalSuccessCount();
+  renderLogList();
+  renderTodayVisitorCount();
+  applyAutoSyncInterval(state.systemSettings.autoSyncMinutes);
+  updateSyncStatus('待機中');
+  hideUserInfo();
+  setDisplay('READY', 'waiting');
+  addSystemLog('前端已啟動');
+  state.uiReady = true;
+
+  closeKeyboardModal();
+  openEntrySelection();
+
+  performSystemCheck();
+  fetchSystemSettings();
+  fetchTodayStats();
+
+  forceSync({ silent: true });
+}
+
+function cacheDom() {
+  els.body = document.body;
+  els.headerBar = document.getElementById('headerBar');
+  els.appTitleBtn = document.getElementById('appTitleBtn');
+  els.btStatusBtn = document.getElementById('btStatusBtn');
+  els.btText = document.getElementById('btText');
+  els.cameraBtn = document.getElementById('cameraBtn');
+  els.displayCard = document.getElementById('displayCard');
+  els.displayValue = document.getElementById('displayValue');
+  els.userInfoBox = document.getElementById('userInfoBox');
+  els.userInfoLine1 = document.getElementById('userInfoLine1');
+  els.userInfoLine2 = document.getElementById('userInfoLine2');
+  els.logList = document.getElementById('logList');
+  els.syncDot = document.getElementById('syncDot');
+  els.syncText = document.getElementById('syncText');
+  els.clearLogsBtn = document.getElementById('clearLogsBtn');
+  els.historyBtn = document.getElementById('historyBtn');
+  els.syncBtn = document.getElementById('syncBtn');
+  els.reloadBtn = document.getElementById('reloadBtn');
+  els.scanInputTrap = document.getElementById('scanInputTrap');
+  els.qrFileInput = document.getElementById('qr-file-input');
+  els.pairingModal = document.getElementById('pairing-modal');
+  els.manualConnectBtn = document.getElementById('manualConnectBtn');
+  els.closePairingBtn = document.getElementById('closePairingBtn');
+  els.keyboardModal = document.getElementById('keyboard-modal');
+  els.confirmKeyboardBtn = document.getElementById('confirmKeyboardBtn');
+  els.keyboardTestInput = document.getElementById('keyboardTestInput');
+
+  els.entryModal = document.getElementById('entry-modal');
+  els.entrySelectPage = document.getElementById('entrySelectPage');
+  els.entryDesktopPage = document.getElementById('entryDesktopPage');
+  els.enterMobileBtn = document.getElementById('enterMobileBtn');
+  els.enterDesktopBtn = document.getElementById('enterDesktopBtn');
+  els.entryBackBtn = document.getElementById('entryBackBtn');
+  els.desktopLoginBtn = document.getElementById('desktopLoginBtn');
+  els.desktopAccountInput = document.getElementById('desktopAccountInput');
+  els.desktopPasswordInput = document.getElementById('desktopPasswordInput');
+  els.entryMessage = document.getElementById('entryMessage');
+  els.todayVisitorCount = document.getElementById('todayVisitorCount');
+  els.todayVisitorChip = document.getElementById('todayVisitorChip');
+  els.ticketSummaryModal = document.getElementById('ticketSummaryModal');
+  els.ticketSummaryCloseBtn = document.getElementById('ticketSummaryCloseBtn');
+  els.ticketSummaryBody = document.getElementById('ticketSummaryBody');
+  els.ticketSummarySubtitle = document.getElementById('ticketSummarySubtitle');
+}
+
+function ensureScannerModal() {
+  let modal = document.getElementById('scanner-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'scanner-modal';
+    modal.className = 'modal';
+    modal.setAttribute('aria-hidden', 'true');
+    modal.innerHTML = `
+      <div class="pairing-box" style="background:#111;color:#fff;width:min(100%,460px);padding:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
+          <div style="font-size:1rem;font-weight:700;">即時掃描 QR Code</div>
+          <button id="scanner-close-btn" type="button" class="icon-btn" style="flex:0 0 auto;">
+            <span class="material-icons-round">close</span>
+          </button>
+        </div>
+        <div id="scanner-reader" style="width:100%;min-height:280px;background:#000;border-radius:12px;overflow:hidden;"></div>
+        <div id="scanner-status" style="margin-top:10px;font-size:.88rem;color:#aaa;text-align:center;">
+          啟動鏡頭中...
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+
+  state.scannerModalEl = modal;
+  state.scannerReaderEl = modal.querySelector('#qr-reader') || modal.querySelector('#scanner-reader');
+  state.scannerCloseBtnEl = modal.querySelector('#closeScannerBtn') || modal.querySelector('#scanner-close-btn');
+  state.scannerStatusEl = modal.querySelector('#scanner-status') || modal.querySelector('.scanner-hint');
+}
+
+function bindEvents() {
+  els.headerBar?.addEventListener('click', toggleHistoryView);
+
+  els.appTitleBtn?.addEventListener('click', toggleThemeMode);
+  els.appTitleBtn?.addEventListener('keydown', handleAppTitleKeydown);
+
+  els.todayVisitorChip?.addEventListener('click', toggleTicketSummaryPanel);
+  els.todayVisitorChip?.addEventListener('keydown', handleTodayVisitorChipKeydown);
+  els.ticketSummaryCloseBtn?.addEventListener('click', closeTicketSummaryPanel);
+  els.ticketSummaryModal?.addEventListener('click', handleTicketSummaryBackdropClick);
+
+  els.btStatusBtn?.addEventListener('click', (event) => {
+    event.stopPropagation();
+    toggleBluetooth();
+  });
+
+  els.cameraBtn?.addEventListener('click', async (event) => {
+    event.stopPropagation();
+    await openCamera();
+  });
+
+  els.clearLogsBtn?.addEventListener('click', clearLogs);
+  els.displayCard?.addEventListener('click', handleDisplayCardRangeClick);
+  els.historyBtn?.addEventListener('click', toggleHistoryView);
+  els.syncBtn?.addEventListener('click', forceSync);
+  els.reloadBtn?.addEventListener('click', () => window.location.reload());
+  els.manualConnectBtn?.addEventListener('click', manualConnect);
+  els.closePairingBtn?.addEventListener('click', closePairing);
+  els.confirmKeyboardBtn?.addEventListener('click', confirmKeyboard);
+  els.qrFileInput?.addEventListener('change', handleImageScan);
+
+  els.enterMobileBtn?.addEventListener('click', continueAsMobile);
+  els.enterDesktopBtn?.addEventListener('click', showDesktopLoginForm);
+  els.entryBackBtn?.addEventListener('click', backToEntrySelection);
+  els.desktopLoginBtn?.addEventListener('click', submitDesktopLogin);
+  els.desktopAccountInput?.addEventListener('keydown', handleDesktopLoginEnter);
+  els.desktopPasswordInput?.addEventListener('keydown', handleDesktopLoginEnter);
+
+  state.scannerCloseBtnEl?.addEventListener('click', closeCameraScanner);
+
+  document.addEventListener('keydown', handleScannerKeydown);
+  document.addEventListener('click', handleDocumentClick, true);
+
+  window.addEventListener('error', (event) => {
+    reportClientError(
+      `[全域錯誤] ${event.message} (行: ${event.lineno}, 列: ${event.colno})`,
+      event.error && event.error.stack ? event.error.stack : ''
+    );
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason = event.reason;
+    const message = typeof reason === 'string' ? reason : String(reason);
+    const stack = reason && reason.stack ? reason.stack : '';
+    reportClientError(`[Promise 錯誤] ${message}`, stack);
+  });
+
+  document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && state.isConnected) {
+    await requestWakeLock();
+    await forceSync({ silent: true });
+    if (!state.scannerRunning) focusTrap();
+  } else if (document.visibilityState === 'hidden' && state.scannerRunning) {
+    await closeCameraScanner(false);
+  }
+});
+}
+
+function handleDocumentClick(event) {
+  if (els.entryModal?.classList.contains('active')) return;
+  if (els.keyboardModal?.classList.contains('active')) return;
+  if (els.pairingModal?.classList.contains('active')) return;
+  if (els.ticketSummaryModal?.classList.contains('active')) return;
+  if (state.scannerModalEl?.classList.contains('active')) return;
+  if (event.target === els.keyboardTestInput) return;
+  focusTrap();
+}
+
+function storageKey(name) {
+  return `${CONFIG.storagePrefix}:${name}`;
+}
+
+function getTodayKey() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: CONFIG.timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+
+function loadFromStorage() {
+  try {
+    const todayKey = getTodayKey();
+    const lastRunDate = localStorage.getItem(storageKey('lastRunDate'));
+
+    const soundRules = localStorage.getItem(storageKey('localSoundRules'));
+    if (soundRules) state.localSoundRules = JSON.parse(soundRules);
+
+    const settings = localStorage.getItem(storageKey('systemSettings'));
+    if (settings) {
+      state.systemSettings = Object.assign({}, state.systemSettings, JSON.parse(settings));
+    }
+
+    if (lastRunDate !== todayKey) {
+      state.localHistory = [];
+      state.uploadQueue = [];
+      localStorage.setItem(storageKey('localHistory'), JSON.stringify([]));
+      localStorage.setItem(storageKey('uploadQueue'), JSON.stringify([]));
+      localStorage.setItem(storageKey('lastRunDate'), todayKey);
+    } else {
+      state.localHistory = safeJsonParse(localStorage.getItem(storageKey('localHistory')), []);
+      state.uploadQueue = safeJsonParse(localStorage.getItem(storageKey('uploadQueue')), []);
+    }
+
+    state.localValidationDB = safeJsonParse(localStorage.getItem(storageKey('localValidationDB')), {});
+    state.localWhiteListRules = safeJsonParse(localStorage.getItem(storageKey('localWhiteListRules')), []);
+  } catch (error) {
+    console.error('Storage Error', error);
+    addSystemLog('本機快取讀取失敗', 'st-exp');
   }
 }
 
-.log-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  width: 100%;
+function saveToStorage() {
+  localStorage.setItem(storageKey('localHistory'), JSON.stringify(state.localHistory));
+  localStorage.setItem(storageKey('uploadQueue'), JSON.stringify(state.uploadQueue));
+  localStorage.setItem(storageKey('localValidationDB'), JSON.stringify(state.localValidationDB));
+  localStorage.setItem(storageKey('localWhiteListRules'), JSON.stringify(state.localWhiteListRules));
+  localStorage.setItem(storageKey('localSoundRules'), JSON.stringify(state.localSoundRules));
+  localStorage.setItem(storageKey('systemSettings'), JSON.stringify(state.systemSettings));
+  localStorage.setItem(storageKey('lastRunDate'), getTodayKey());
 }
 
-.log-row {
-  display: grid;
-  grid-template-columns: 92px minmax(0, 1fr);
-  gap: 12px;
-  padding: 10px 4px;
-  border-bottom: 1px solid #333;
-  align-items: center;
+function safeJsonParse(text, fallback) {
+  if (!text) return fallback;
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    return fallback;
+  }
 }
 
-.log-time {
-  color: #888;
-  font-family: 'Roboto Mono', monospace;
-  font-size: 0.8rem;
-  text-align: left;
+function sanitizeAutoSyncMinutes(value) {
+  const num = parseInt(value, 10);
+  if (Number.isNaN(num)) return CONFIG.defaultAutoSyncMinutes;
+  return Math.min(Math.max(num, 1), 1440);
 }
 
-.log-data {
-  color: var(--text-main);
-  font-family: 'Roboto Mono', monospace;
-  font-size: 0.95rem;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.log-row.st-ok .log-data,
-.st-ok {
-  color: var(--success);
-}
-
-.log-row.st-warn .log-data,
-.st-warn {
-  color: var(--warning);
-}
-
-.log-row.st-exp .log-data,
-.st-exp {
-  color: var(--error);
-}
-
-.log-row.st-sys .log-data {
-  color: #d0d0d0;
-}
-
-.footer {
-  padding: 15px 20px calc(25px + env(safe-area-inset-bottom, 12px)) 20px;
-  background: var(--card-bg);
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 15px;
-  border-top: 1px solid var(--glass-border);
-  z-index: 20;
-  width: 100%;
-  flex: 0 0 auto;
-}
-
-.action-btn {
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  color: var(--text-sub);
-  padding: 12px 0;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.15s ease, background 0.15s ease;
-  min-height: 74px;
-}
-
-.action-btn:active,
-.bt-status:active,
-.cam-btn:active,
-.icon-btn:active,
-.primary-btn:active,
-.secondary-btn:active {
-  transform: scale(0.97);
-}
-
-.action-btn span {
-  font-size: 1.5rem;
-  margin-bottom: 4px;
-}
-
-.action-btn div {
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.btn-upload {
-  color: var(--primary);
-  background: rgba(108, 99, 255, 0.1);
-  border-color: rgba(108, 99, 255, 0.3);
-}
-
-#scanInputTrap {
-  position: absolute;
-  top: -1000px;
-  left: -1000px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.modal {
-  position: fixed;
-  inset: 0;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 300;
-  background: rgba(0, 0, 0, 0.88);
-  padding:
-    calc(20px + env(safe-area-inset-top, 0px))
-    20px
-    calc(20px + env(safe-area-inset-bottom, 0px))
-    20px;
-}
-
-.modal.active {
-  display: flex;
-}
-
-.pairing-box {
-  background: #fff;
-  color: #000;
-  padding: 20px;
-  border-radius: 16px;
-  text-align: center;
-  width: min(100%, 380px);
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
-  max-height: calc(100dvh - 80px);
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.pairing-img {
-  width: 200px;
-  height: 200px;
-  object-fit: contain;
-  margin-bottom: 10px;
-}
-
-.pairing-text {
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.pairing-sub {
-  font-size: 0.9rem;
-  color: #555;
-  margin-bottom: 16px;
-  line-height: 1.5;
-}
-
-.keyboard-box {
-  max-width: 420px;
-}
-
-.keyboard-icon {
-  font-size: 4rem;
-  color: #ffd700;
-}
-
-.keyboard-test-box {
-  margin: 15px 0;
-  background: #f5f5f5;
-  padding: 10px;
-  border-radius: 8px;
-  text-align: left;
-}
-
-.keyboard-test-label {
-  font-size: 0.8rem;
-  color: #555;
-  margin-bottom: 5px;
-}
-
-#keyboardTestInput {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.primary-btn,
-.secondary-btn {
-  width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.primary-btn {
-  background: var(--primary);
-  color: white;
-}
-
-.secondary-btn {
-  margin-top: 10px;
-  background: #ececec;
-  color: #333;
-}
-
-.scanner-modal {
-  padding: 0;
-  background: rgba(0, 0, 0, 0.94);
-}
-
-.scanner-shell {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding:
-    calc(12px + env(safe-area-inset-top, 0px))
-    12px
-    calc(12px + env(safe-area-inset-bottom, 0px))
-    12px;
-  gap: 12px;
-}
-
-.scanner-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.scanner-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: 0.4px;
-}
-
-.scanner-close-btn {
-  flex: 0 0 auto;
-}
-
-.scanner-reader-wrap {
-  flex: 1 1 auto;
-  min-height: 0;
-  border-radius: 18px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: #000;
-  position: relative;
-}
-
-.qr-reader {
-  width: 100%;
-  height: 100%;
-}
-
-.qr-reader video {
-  object-fit: cover !important;
-}
+function applyAutoSyncInterval(minutes) {
+  const safeMinutes = sanitizeAutoSyncMinutes(minutes);
+  state.systemSettings.autoSyncMinutes = safeMinutes;
 
-.qr-reader__dashboard_section_csr,
-.qr-reader__dashboard_section_swaplink {
-  display: none !important;
+  if (state.autoSyncTimer) clearInterval(state.autoSyncTimer);
+  state.autoSyncTimer = window.setInterval(autoSync, safeMinutes * 60 * 1000);
 }
 
-.qr-reader__dashboard {
-  padding: 0 !important;
+function updateSyncStatus(text, isBlinking = false) {
+  if (els.syncText) els.syncText.innerText = text;
+  if (els.syncDot) els.syncDot.classList.toggle('syncing', Boolean(isBlinking));
 }
 
-.qr-reader__status_span {
-  color: #fff !important;
+function applySavedThemeMode() {
+  let savedMode = 'dark';
+  try {
+    savedMode = localStorage.getItem(storageKey('themeMode')) || 'dark';
+  } catch (error) {
+    savedMode = 'dark';
+  }
+  applyThemeMode(savedMode);
 }
 
-.scanner-hint {
-  text-align: center;
-  font-size: 0.85rem;
-  color: #b8b8b8;
-  line-height: 1.5;
+function persistThemeMode() {
+  try {
+    localStorage.setItem(storageKey('themeMode'), state.themeMode);
+  } catch (error) {
+    console.warn('主題儲存失敗', error);
+  }
 }
 
-.entry-modal {
-  z-index: 520;
-  background: rgba(0, 0, 0, 0.92);
-}
-
-.entry-shell {
-  width: min(100%, 420px);
-  background: linear-gradient(145deg, #242424, #1c1c1c);
-  border: 1px solid var(--glass-border);
-  border-radius: 24px;
-  padding: 22px;
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
-}
-
-.entry-page[hidden] {
-  display: none !important;
-}
-
-.entry-title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 8px;
-  color: var(--text-main);
-}
-
-.entry-subtitle {
-  font-size: 0.92rem;
-  color: var(--text-sub);
-  text-align: center;
-  line-height: 1.6;
-  margin-bottom: 18px;
-}
-
-.entry-choice-stack {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
-}
-
-.entry-choice-btn {
-  width: 100%;
-  min-height: 128px;
-  border-radius: 20px;
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  color: var(--text-main);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-  padding: 18px 16px;
-}
-
-.entry-choice-btn:hover {
-  border-color: rgba(108, 99, 255, 0.55);
-  background: rgba(108, 99, 255, 0.12);
-}
-
-.entry-choice-btn:active {
-  transform: scale(0.98);
-}
-
-.entry-choice-icon {
-  font-size: 2rem;
-  color: var(--primary);
-}
-
-.entry-choice-label {
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-
-.entry-choice-desc {
-  font-size: 0.85rem;
-  color: var(--text-sub);
-}
-
-.entry-form {
-  display: grid;
-  gap: 12px;
-}
-
-.entry-input {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid var(--glass-border);
-  color: var(--text-main);
-  border-radius: 14px;
-  padding: 14px 14px;
-  outline: none;
-  font-size: 1rem;
-}
-
-.entry-input:focus {
-  border-color: rgba(108, 99, 255, 0.7);
-  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.14);
-}
-
-.entry-message {
-  min-height: 22px;
-  margin-top: 10px;
-  font-size: 0.88rem;
-  text-align: center;
-  color: var(--warning);
-}
-
-.entry-message.error {
-  color: var(--error);
-}
-
-.entry-message.success {
-  color: var(--success);
-}
-
-.entry-btn-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 12px;
-}
-
-.entry-back-btn {
-  margin-top: 0;
-}
-
-.display-card.range-mode-armed {
-  border-color: #4da3ff !important;
-  box-shadow:
-    0 0 0 2px rgba(77, 163, 255, 0.28),
-    0 12px 32px rgba(0, 0, 0, 0.42),
-    0 0 24px rgba(77, 163, 255, 0.22);
-}
-
-.display-card.range-mode-armed .display-label {
-  color: #8ec5ff;
-}
-
-.display-card.range-mode-armed .display-sub-text,
-.display-card.range-mode-armed .info-line.sub {
-  color: #9fd0ff;
-}
-
-
-.stats-modal {
-  z-index: 560;
-  background: rgba(0, 0, 0, 0.9);
-}
-
-.stats-sheet {
-  width: min(100%, 680px);
-  max-height: calc(100dvh - 56px);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  background: linear-gradient(145deg, #242424, #1b1b1b);
-  border: 1px solid var(--glass-border);
-  border-radius: 24px;
-  box-shadow: 0 22px 56px rgba(0, 0, 0, 0.5);
-}
-
-.stats-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 18px 18px 14px 18px;
-  border-bottom: 1px solid var(--glass-border);
-}
-
-.stats-header-text {
-  min-width: 0;
-}
-
-.stats-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text-main);
-  letter-spacing: 0.3px;
-}
-
-.stats-subtitle {
-  margin-top: 4px;
-  font-size: 0.82rem;
-  color: var(--text-sub);
-  line-height: 1.5;
-}
-
-.stats-close-btn {
-  flex: 0 0 auto;
-}
-
-.stats-table {
-  padding: 14px 16px 16px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-height: 0;
-}
-
-.stats-table-head,
-.stats-table-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) 90px 96px;
-  gap: 12px;
-  align-items: center;
-}
-
-.stats-table-head {
-  padding: 0 10px;
-  font-size: 0.74rem;
-  color: var(--text-sub);
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-}
+function applyThemeMode(mode) {
+  const resolvedMode = mode === 'light' ? 'light' : 'dark';
+  state.themeMode = resolvedMode;
 
-.stats-table-body {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  overflow-y: auto;
-  min-height: 0;
-  padding-right: 2px;
-}
+  els.body?.classList.toggle('theme-light', resolvedMode === 'light');
+  els.body?.classList.toggle('theme-dark', resolvedMode === 'dark');
 
-.stats-table-row {
-  padding: 12px 10px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255,255,255,0.05);
+  if (els.appTitleBtn) {
+    const modeText = resolvedMode === 'light' ? '日色模式' : '夜色模式';
+    const nextModeText = resolvedMode === 'light' ? '夜色模式' : '日色模式';
+    els.appTitleBtn.setAttribute('aria-label', `目前${modeText}，點擊切換為${nextModeText}`);
+    els.appTitleBtn.setAttribute('title', `目前${modeText}，點擊切換為${nextModeText}`);
+  }
 }
 
-.stats-ticket-name {
-  min-width: 0;
-  color: var(--text-main);
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+function handleAppTitleKeydown(event) {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  toggleThemeMode(event);
 }
 
-.stats-ticket-code {
-  justify-self: start;
-  font-family: 'Roboto Mono', monospace;
-  color: #cfcfff;
-  font-size: 0.9rem;
-}
+function toggleThemeMode(event) {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
 
-.stats-ticket-count {
-  justify-self: end;
-  min-width: 72px;
-  text-align: center;
-  padding: 7px 10px;
-  border-radius: 999px;
-  background: rgba(108, 99, 255, 0.12);
-  border: 1px solid rgba(108, 99, 255, 0.24);
-  font-family: 'Roboto Mono', monospace;
-  font-weight: 700;
-  color: var(--text-main);
+  const nextMode = state.themeMode === 'light' ? 'dark' : 'light';
+  applyThemeMode(nextMode);
+  persistThemeMode();
 }
 
-.stats-empty,
-.stats-loading {
-  padding: 28px 16px;
-  text-align: center;
-  color: var(--text-sub);
-  line-height: 1.7;
+function handleTodayVisitorChipKeydown(event) {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  toggleTicketSummaryPanel(event);
 }
 
-.stats-loading {
-  color: var(--text-main);
+function handleTicketSummaryBackdropClick(event) {
+  if (event.target === els.ticketSummaryModal) {
+    closeTicketSummaryPanel();
+  }
 }
 
+async function toggleTicketSummaryPanel(event) {
+  event?.stopPropagation?.();
 
-@media (max-width: 600px) {
-  .header {
-    padding:
-      calc(12px + env(safe-area-inset-top, 0px))
-      14px
-      12px
-      14px;
-    grid-template-columns: 1fr auto;
-    grid-template-areas:
-      "title controls"
-      "center center";
-    align-items: center;
-    row-gap: 10px;
+  if (!state.accessGranted && els.entryModal?.classList.contains('active')) {
+    return;
+  }
+  if (state.scannerRunning) return;
+
+  if (state.ticketSummaryOpen) {
+    closeTicketSummaryPanel();
+    return;
   }
 
-  .header-left {
-    grid-area: title;
+  openTicketSummaryPanel();
+  await fetchTodayTicketSummary(true);
+}
+
+function openTicketSummaryPanel() {
+  if (!els.ticketSummaryModal) return;
+  state.ticketSummaryOpen = true;
+  els.ticketSummaryModal.classList.add('active');
+  els.ticketSummaryModal.setAttribute('aria-hidden', 'false');
+  renderTicketSummaryLoading();
+}
+
+function closeTicketSummaryPanel() {
+  if (!els.ticketSummaryModal) return;
+  state.ticketSummaryOpen = false;
+  els.ticketSummaryModal.classList.remove('active');
+  els.ticketSummaryModal.setAttribute('aria-hidden', 'true');
+  focusTrap();
+}
+
+function renderTicketSummaryLoading() {
+  if (!els.ticketSummaryBody) return;
+  els.ticketSummaryBody.innerHTML = '<div class="stats-loading">讀取當日票種統計中...</div>';
+  updateTicketSummarySubtitle();
+}
+
+function updateTicketSummarySubtitle() {
+  if (!els.ticketSummarySubtitle) return;
+  const total = Number(state.todayVisitorCount || 0);
+  els.ticketSummarySubtitle.textContent = '當日累計 ' + total + ' 人｜隔日自動歸零';
+}
+
+function renderTicketSummaryRows(summary) {
+  if (!els.ticketSummaryBody) return;
+
+  const rows = Array.isArray(summary) ? summary : [];
+  updateTicketSummarySubtitle();
+
+  if (!rows.length) {
+    els.ticketSummaryBody.innerHTML = '<div class="stats-empty">目前沒有可顯示的票種統計</div>';
+    return;
   }
 
-  .header-center {
-    grid-area: center;
-    width: 100%;
+  const html = rows.map(function (item) {
+    const name = escapeHtml(item.name || '');
+    const code = escapeHtml(item.code || '');
+    const count = Number(item.count || 0);
+    return ''
+      + '<div class="stats-table-row">'
+      +   '<div class="stats-ticket-name">' + name + '</div>'
+      +   '<div class="stats-ticket-code">' + code + '</div>'
+      +   '<div class="stats-ticket-count">' + count + '</div>'
+      + '</div>';
+  }).join('');
+
+  els.ticketSummaryBody.innerHTML = html;
+}
+
+async function fetchTodayTicketSummary(forceRefresh) {
+  if (state.ticketSummaryLoading) return;
+  if (!forceRefresh && state.todayTicketSummary.length) {
+    renderTicketSummaryRows(state.todayTicketSummary);
+    return;
   }
 
-  .header-controls {
-    grid-area: controls;
+  state.ticketSummaryLoading = true;
+  renderTicketSummaryLoading();
+
+  try {
+    const res = await apiRequest('getTodayStats', {}, 'GET');
+    if (typeof res.todayVisitorCount !== 'undefined') {
+      renderTodayVisitorCount(res.todayVisitorCount);
+    }
+    state.todayTicketSummary = Array.isArray(res.todayTicketSummary) ? res.todayTicketSummary : [];
+    renderTicketSummaryRows(state.todayTicketSummary);
+  } catch (error) {
+    if (els.ticketSummaryBody) {
+      els.ticketSummaryBody.innerHTML =
+        '<div class="stats-empty">讀取失敗：' + escapeHtml(error.message || '未知錯誤') + '</div>';
+    }
+    updateTicketSummarySubtitle();
+  } finally {
+    state.ticketSummaryLoading = false;
+  }
+}
+
+function getLocalSuccessCount() {
+  return state.localHistory.filter((item) => item && item.status === 'ok').length;
+}
+
+function renderTodayVisitorCount(count) {
+  const resolvedCount = Number.isFinite(Number(count))
+    ? Math.max(0, Number(count))
+    : Math.max(Number(state.todayVisitorCount || 0), getLocalSuccessCount());
+
+  state.todayVisitorCount = resolvedCount;
+
+  if (els.todayVisitorCount) {
+    els.todayVisitorCount.textContent = String(resolvedCount);
+  }
+}
+
+function setDisplay(text, status = 'waiting') {
+  if (!els.displayValue || !els.displayCard) return;
+
+  const safeText = text == null ? '' : String(text);
+  els.displayValue.innerHTML = '';
+  els.displayValue.classList.remove('has-subline');
+
+  const main = document.createElement('div');
+  main.className = 'display-main-text';
+  main.textContent = safeText;
+  els.displayValue.appendChild(main);
+
+    applyDisplayCardState(status);
+}
+
+function setDisplayWithSubline(primaryText, secondaryText, status = 'waiting') {
+  if (!els.displayValue || !els.displayCard) return;
+
+  const safePrimary = primaryText == null ? '' : String(primaryText);
+  const safeSecondary = secondaryText == null ? '' : String(secondaryText);
+
+  els.displayValue.innerHTML = '';
+  els.displayValue.classList.toggle('has-subline', Boolean(safeSecondary));
+
+  const main = document.createElement('div');
+  main.className = 'display-main-text';
+  main.textContent = safePrimary;
+  els.displayValue.appendChild(main);
+
+  if (safeSecondary) {
+    const sub = document.createElement('div');
+    sub.className = 'display-sub-text';
+    sub.textContent = safeSecondary;
+    els.displayValue.appendChild(sub);
   }
 
-  .today-visitor-chip {
-    width: 100%;
-    justify-content: center;
-    padding: 8px 12px;
+   applyDisplayCardState(status);
+}
+
+function applyDisplayCardState(status = 'waiting') {
+  if (!els.displayCard) return;
+  els.displayCard.className = `display-card ${status}`;
+  if (state.rangeModeArmed) {
+    els.displayCard.classList.add('range-mode-armed');
+  }
+}
+
+function clearLastArmableTicket() {
+  state.lastArmableTicket = null;
+}
+
+function parseSequentialCode(code) {
+  const match = String(code || '').trim().match(/^([A-Za-z]+)(\d+)(.*)$/);
+  if (!match) return null;
+
+  const number = Number(match[2]);
+  if (!Number.isFinite(number)) return null;
+
+  return {
+    prefix: String(match[1] || '').toUpperCase(),
+    numberText: String(match[2] || ''),
+    width: String(match[2] || '').length,
+    number,
+    suffix: String(match[3] || ''),
+  };
+}
+
+function parseTicketRaw(rawInput) {
+  const parts = String(rawInput || '').split(',').map((part) => part.trim());
+  const code = parts[0] || '';
+
+  return {
+    rawInput: String(rawInput || ''),
+    parts,
+    code,
+    datePart: parts[1] || '',
+    tailParts: parts.slice(1),
+    tailSignature: parts.slice(1).join(','),
+    sequence: parseSequentialCode(code),
+  };
+}
+
+function buildRawFromParsedTicket(anchorParsed, number) {
+  const seq = anchorParsed.sequence;
+  const code =
+    `${seq.prefix}${String(number).padStart(seq.width, '0')}${seq.suffix}`;
+
+  return {
+    code,
+    raw: [code, ...anchorParsed.tailParts].join(','),
+  };
+}
+
+function removeRangeAnchorFromState(anchor) {
+  if (!anchor || !anchor.record) return;
+
+  const historyIndex = state.localHistory.findIndex((item) =>
+    item.code === anchor.record.code &&
+    item.time === anchor.record.time &&
+    item.fullTime === anchor.record.fullTime
+  );
+
+  if (historyIndex !== -1) {
+    state.localHistory.splice(historyIndex, 1);
   }
 
-  .today-visitor-label {
-    font-size: 0.72rem;
+  const queueIndex = state.uploadQueue.findIndex((item) =>
+    item.content === anchor.record.code &&
+    item.time === anchor.record.fullTime &&
+    String(item.raw || item.content) === String(anchor.originalRaw || anchor.record.code)
+  );
+
+  if (queueIndex !== -1) {
+    state.uploadQueue.splice(queueIndex, 1);
   }
 
-  .today-visitor-value {
-    font-size: 0.96rem;
+  saveToStorage();
+  renderLogList();
+}
+
+function restoreRangeAnchorIfNeeded() {
+  const anchor = state.rangeAnchor;
+  if (!anchor || !anchor.record) return;
+
+  pushRecord(anchor.record, anchor.originalRaw);
+  if (anchor.ticketTypeName) {
+    setDisplayWithSubline(anchor.parsed.code, anchor.ticketTypeName, 'success');
+    showUserInfo(anchor.ticketTypeName, '驗證通過');
+  } else {
+    setDisplay(anchor.parsed.code, 'success');
+    showUserInfo(anchor.parsed.sequence?.prefix || '', '驗證通過');
+  }
+}
+
+function exitRangeMode(options = {}) {
+  const restoreAnchor = Boolean(options.restoreAnchor);
+  if (restoreAnchor) {
+    restoreRangeAnchorIfNeeded();
   }
 
-  .app-title {
-    font-size: 1rem;
+  state.rangeModeArmed = false;
+  state.rangeAnchor = null;
+  applyDisplayCardState(els.displayCard?.classList.contains('success')
+    ? 'success'
+    : els.displayCard?.classList.contains('warning')
+      ? 'warning'
+      : els.displayCard?.classList.contains('error')
+        ? 'error'
+        : 'waiting'
+  );
+}
+
+function handleDisplayCardRangeClick() {
+  if (!state.accessGranted) return;
+  if (els.entryModal?.classList.contains('active')) return;
+  if (els.keyboardModal?.classList.contains('active')) return;
+  if (els.pairingModal?.classList.contains('active')) return;
+  if (state.scannerRunning) return;
+
+  if (state.rangeModeArmed) {
+    exitRangeMode({ restoreAnchor: true });
+    addSystemLog('連號模式已取消');
+    focusTrap();
+    return;
   }
 
-  .main-container {
-    padding: 14px;
+  if (!state.lastArmableTicket) return;
+
+  state.rangeAnchor = {
+    parsed: state.lastArmableTicket.parsed,
+    originalRaw: state.lastArmableTicket.originalRaw,
+    record: state.lastArmableTicket.record,
+    ticketTypeName: state.lastArmableTicket.ticketTypeName || '',
+  };
+  state.rangeModeArmed = true;
+
+  removeRangeAnchorFromState(state.rangeAnchor);
+
+  setDisplayWithSubline(
+    state.rangeAnchor.parsed.code,
+    '連號模式已啟用，請直接掃最後一張',
+    'success'
+  );
+ showUserInfo(' ', '等待最後一張');
+  addSystemLog(`連號模式啟用：${state.rangeAnchor.parsed.code}`);
+  focusTrap();
+}
+
+function pushBatchRecords(items) {
+  if (!Array.isArray(items) || items.length === 0) return;
+
+  for (let i = items.length - 1; i >= 0; i -= 1) {
+    state.localHistory.unshift(items[i].record);
   }
 
-  .footer {
-    padding:
-      12px
-      14px
-      calc(18px + env(safe-area-inset-bottom, 12px))
-      14px;
-    gap: 10px;
+  items.forEach((item) => {
+    state.uploadQueue.push({
+      time: item.record.fullTime,
+      content: item.record.code,
+      raw: item.raw || item.record.code,
+    });
+  });
+
+  saveToStorage();
+  renderTodayVisitorCount();
+
+  if (els.logList) {
+    const frag = document.createDocumentFragment();
+    items.forEach((item) => {
+      frag.appendChild(createLogRow(item.record));
+    });
+    els.logList.prepend(frag);
+  }
+}
+
+function handleRangeClosingScan(currentParsed, time, fullTime) {
+  const anchor = state.rangeAnchor;
+  if (!anchor || !anchor.parsed || !anchor.parsed.sequence) {
+    state.rangeModeArmed = false;
+    state.rangeAnchor = null;
+    playErrorBeep();
+    setDisplay('連號模式失效', 'error');
+    clearLastArmableTicket();
+    return true;
   }
 
-  .display-card {
-    min-height: 168px;
-    padding: 14px;
+  if (!currentParsed.sequence) {
+    playErrorBeep();
+    setDisplayWithSubline('連號不符', '請掃同批票券的最後一張', 'error');
+    showUserInfo(anchor.parsed.code, '仍在等待最後一張');
+    return true;
   }
 
-  .display-value {
-    font-size: clamp(1.05rem, 5vw, 1.45rem);
+  const sameStructure =
+    anchor.parsed.sequence.prefix === currentParsed.sequence.prefix &&
+    anchor.parsed.sequence.suffix === currentParsed.sequence.suffix &&
+    anchor.parsed.sequence.width === currentParsed.sequence.width &&
+    anchor.parsed.tailSignature === currentParsed.tailSignature;
+
+  if (!sameStructure) {
+    playErrorBeep();
+    setDisplayWithSubline('連號不符', '請掃同批票券的最後一張', 'error');
+    showUserInfo(anchor.parsed.code, '仍在等待最後一張');
+    return true;
   }
 
-  .display-sub-text {
-    font-size: 0.82rem;
+  const startNum = Math.min(anchor.parsed.sequence.number, currentParsed.sequence.number);
+  const endNum = Math.max(anchor.parsed.sequence.number, currentParsed.sequence.number);
+  const count = endNum - startNum + 1;
+
+  const existingOkCodes = new Set(
+    state.localHistory
+      .filter((item) => item.status === 'ok')
+      .map((item) => item.code)
+  );
+
+  const batchItems = [];
+  for (let n = startNum; n <= endNum; n += 1) {
+    const built = buildRawFromParsedTicket(anchor.parsed, n);
+
+    if (existingOkCodes.has(built.code)) {
+      playDuplicateSound();
+      setDisplayWithSubline('區間含重複票', built.code, 'warning');
+      showUserInfo(anchor.parsed.code, '請重新掃描或點一下取消');
+      return true;
+    }
+
+    batchItems.push({
+      raw: built.raw,
+      record: {
+        code: built.code,
+        time,
+        fullTime,
+        status: 'ok',
+        className: 'st-ok',
+      },
+    });
   }
 
-  .log-row {
-    grid-template-columns: 82px minmax(0, 1fr);
+  pushBatchRecords(batchItems);
+
+  state.rangeModeArmed = false;
+  state.rangeAnchor = null;
+  state.lastArmableTicket = null;
+
+  const firstCode = batchItems[0].record.code;
+  const lastCode = batchItems[batchItems.length - 1].record.code;
+  const ticketTypeName = anchor.ticketTypeName || '';
+
+  playSuccessBeeps(1);
+  setDisplayWithSubline(
+    `${firstCode}~${lastCode}`,
+    `共${count}張${ticketTypeName ? ` ｜ ${ticketTypeName}` : ''}`,
+    'success'
+  );
+  showUserInfo(' ', `連號完成｜共${count}張`);
+
+  return true;
+}
+
+function showUserInfo(line1, line2) {
+  if (!els.userInfoBox) return;
+  els.userInfoLine1.innerText = line1 == null ? '--' : line1;
+  els.userInfoLine2.innerText = line2 == null ? '--' : line2;
+  els.userInfoBox.hidden = false;
+}
+
+function hideUserInfo() {
+  if (!els.userInfoBox) return;
+  els.userInfoBox.hidden = true;
+  els.userInfoLine1.innerText = '--';
+  els.userInfoLine2.innerText = '--';
+}
+
+function getNowParts() {
+  const now = new Date();
+  const time = new Intl.DateTimeFormat('zh-TW', {
+    timeZone: CONFIG.timezone,
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).format(now);
+
+  const fullTime = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: CONFIG.timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).format(now).replace(' ', ' ');
+
+  const ymdParts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: CONFIG.timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now).split('-');
+
+  return {
+    time,
+    fullTime,
+    todayYmdCompact: `${ymdParts[0]}${ymdParts[1]}${ymdParts[2]}`,
+  };
+}
+
+function normalizeInput(data) {
+  if (typeof data !== 'string') return '';
+  const trimmed = data.trim();
+  if (!trimmed) return '';
+
+  try {
+    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+    if (
+      trimmed.length >= 8 &&
+      trimmed.length % 4 === 0 &&
+      trimmed.includes('=') &&
+      base64Regex.test(trimmed)
+    ) {
+      return decodeURIComponent(escape(window.atob(trimmed)));
+    }
+  } catch (error) {
+    // ignore
   }
 
-  .log-data {
-    font-size: 0.88rem;
+  return trimmed;
+}
+
+function handleScanInput(data, source = 'keyboard') {
+  if (!data) return;
+  const rawInput = data.trim();
+  if (!rawInput) return;
+
+  if (source === 'keyboard' && /[^\x00-\x7F]/.test(rawInput)) {
+    playErrorBeep();
+    setDisplay('輸入法錯誤!', 'error');
+    openKeyboardModal();
+    return;
   }
 
-  .action-btn {
-    min-height: 68px;
+  const decodedData = normalizeInput(rawInput);
+  processLocalLogic(decodedData, rawInput);
+  focusTrap();
+}
+
+function processLocalLogic(rawInput, originalRaw = rawInput) {
+  const { time, fullTime, todayYmdCompact } = getNowParts();
+  hideUserInfo();
+
+  if (rawInput.includes(',')) {
+    processTicketLikeRecord(rawInput, originalRaw, time, fullTime, todayYmdCompact);
+    return;
   }
 
-  .scanner-title {
-    font-size: 0.92rem;
+  clearLastArmableTicket();
+
+  if (state.rangeModeArmed) {
+    playErrorBeep();
+    setDisplayWithSubline('連號模式中', '請直接掃最後一張票券', 'warning');
+    showUserInfo(state.rangeAnchor?.parsed?.code || '--', '仍在等待最後一張');
+    return;
   }
 
-  .entry-shell {
-    width: min(100%, 100%);
-    padding: 18px;
-    border-radius: 20px;
+  const isValidationTarget = state.localWhiteListRules.some((rule) => {
+    const prefix = String(rule.prefix || '').toUpperCase();
+    const length = Number(rule.length || 0);
+    return prefix && rawInput.toUpperCase().startsWith(prefix) && rawInput.length === length;
+  });
+
+  if (isValidationTarget) {
+    processValidationCard(rawInput, originalRaw, time, fullTime);
+    return;
   }
 
-  .entry-choice-btn {
-    min-height: 116px;
+  playSuccessBeeps(1);
+  setDisplay(rawInput, 'success');
+  const record = { code: rawInput, time, fullTime, status: 'ok', className: 'st-ok' };
+  pushRecord(record, originalRaw);
+}
+
+function processTicketLikeRecord(rawInput, originalRaw, time, fullTime, todayYmdCompact) {
+  const parsed = parseTicketRaw(rawInput);
+  const code = parsed.code;
+  const datePart = parsed.datePart;
+
+  if (!code) {
+    clearLastArmableTicket();
+    playErrorBeep();
+    setDisplay('格式錯誤', 'error');
+    addSystemLog('掃描到空白票號', 'st-exp');
+    return;
   }
 
-  .stats-sheet {
-    width: min(100%, 100%);
-    border-radius: 20px;
+  if (datePart && datePart !== todayYmdCompact) {
+    clearLastArmableTicket();
+    playErrorBeep();
+    setDisplay(`過期票 (${datePart})`, 'error');
+    addLogToUI({ time, code: `${code} (過期)`, className: 'st-exp' });
+    return;
   }
 
-  .stats-header {
-    padding: 16px 16px 12px 16px;
+  if (state.rangeModeArmed) {
+    handleRangeClosingScan(parsed, time, fullTime);
+    return;
   }
 
-  .stats-table {
-    padding: 12px 12px 14px 12px;
+  const isDuplicate = state.localHistory.some((item) => item.code === code && item.status === 'ok');
+  const prefix = extractPrefix(code);
+  const rule = resolveSoundRule(prefix);
+  const ticketTypeName = rule.name || '';
+
+  if (isDuplicate) {
+    clearLastArmableTicket();
+    playDuplicateSound();
+    if (ticketTypeName) {
+      setDisplayWithSubline('重複入場', ticketTypeName, 'warning');
+      showUserInfo(code, '重複票券');
+    } else {
+      setDisplay('重複入場', 'warning');
+      showUserInfo(code, '重複票券');
+    }
+    addLogToUI({ time, code, className: 'st-warn' });
+    return;
   }
 
-  .stats-table-head,
-  .stats-table-row {
-    grid-template-columns: minmax(0, 1.3fr) 72px 78px;
-    gap: 8px;
+  playSuccessBeeps(rule.sound || 1);
+  if (ticketTypeName) {
+    setDisplayWithSubline(code, ticketTypeName, 'success');
+    showUserInfo(prefix || 'TICKET', '驗證通過');
+  } else {
+    setDisplay(code, 'success');
+    showUserInfo(prefix || 'TICKET', '驗證通過');
   }
 
-  .stats-table-head {
-    padding: 0 8px;
-    font-size: 0.68rem;
+  const record = { code, time, fullTime, status: 'ok', className: 'st-ok' };
+  pushRecord(record, originalRaw);
+
+  state.lastArmableTicket = {
+    parsed,
+    originalRaw,
+    record,
+    ticketTypeName,
+  };
+}
+
+function processValidationCard(rawInput, originalRaw, time, fullTime) {
+  clearLastArmableTicket();
+  const validUser = state.localValidationDB[rawInput];
+  const isDuplicate = state.localHistory.some((item) => item.code === rawInput && item.status === 'ok');
+
+  if (!validUser) {
+    playErrorBeep();
+    setDisplay('無效卡片', 'error');
+    showUserInfo('查無資料', '請洽管理員');
+    addLogToUI({ time, code: `${rawInput} (無效)`, className: 'st-exp' });
+    return;
   }
 
-  .stats-table-row {
-    padding: 11px 8px;
+  const userLine = [validUser.name, validUser.gender, validUser.birth].filter(Boolean).join(' | ');
+  const idLine = validUser.id || '已找到會員資料';
+
+  if (isDuplicate) {
+    playDuplicateSound();
+    setDisplay('重複入場', 'warning');
+    showUserInfo(userLine || rawInput, idLine);
+    addLogToUI({ time, code: `${rawInput} (重複)`, className: 'st-warn' });
+    return;
   }
 
-  .stats-ticket-name {
-    font-size: 0.92rem;
+  playSuccessBeeps(1);
+  setDisplay('驗證通過', 'success');
+  showUserInfo(userLine || rawInput, idLine);
+
+  const record = { code: rawInput, time, fullTime, status: 'ok', className: 'st-ok' };
+  pushRecord(record, originalRaw);
+}
+
+function pushRecord(record, originalRaw) {
+  state.localHistory.unshift(record);
+  state.uploadQueue.push({
+    time: record.fullTime,
+    content: record.code,
+    raw: originalRaw || record.code,
+  });
+  saveToStorage();
+  renderTodayVisitorCount();
+  addLogToUI(record);
+}
+
+function createLogRow(item) {
+  const div = document.createElement('div');
+  div.className = `log-row ${item.className || ''}`;
+  div.innerHTML = `
+    <div class="log-time">${escapeHtml(item.time || 'SYS')}</div>
+    <div class="log-data">${escapeHtml(item.code || '')}</div>
+  `;
+  return div;
+}
+
+function addLogToUI(item) {
+  if (!els.logList) return;
+  els.logList.prepend(createLogRow(item));
+}
+
+function addSystemLog(message, className = 'st-sys') {
+  addLogToUI({ time: 'SYS', code: message, className });
+}
+
+function renderLogList() {
+  if (!els.logList) return;
+  els.logList.innerHTML = '';
+  state.localHistory.forEach((item) => {
+    els.logList.appendChild(createLogRow(item));
+  });
+}
+
+function clearLogs() {
+  const ok = window.confirm('確定清除本機紀錄？這不會刪除雲端資料。');
+  if (!ok) return;
+  state.localHistory = [];
+  state.uploadQueue = [];
+  saveToStorage();
+  renderLogList();
+  fetchTodayStats();
+  addSystemLog('本機紀錄已清除');
+}
+
+function toggleHistoryView() {
+  if (state.scannerRunning) return;
+  els.body?.classList.toggle('history-mode');
+}
+
+function confirmKeyboard() {
+  closeKeyboardModal();
+  focusTrap();
+}
+
+function openKeyboardModal() {
+  els.keyboardModal?.classList.add('active');
+  els.keyboardModal?.setAttribute('aria-hidden', 'false');
+  els.keyboardTestInput?.focus();
+}
+
+function closeKeyboardModal() {
+  els.keyboardModal?.classList.remove('active');
+  els.keyboardModal?.setAttribute('aria-hidden', 'true');
+}
+
+function openEntrySelection() {
+  if (!els.entryModal) return;
+
+  els.entryModal.classList.add('active');
+  els.entryModal.setAttribute('aria-hidden', 'false');
+
+  showEntryPage('select');
+  setEntryMessage('');
+
+  if (els.desktopAccountInput) els.desktopAccountInput.value = '';
+  if (els.desktopPasswordInput) els.desktopPasswordInput.value = '';
+
+  els.enterMobileBtn?.focus();
+}
+
+function showDesktopLoginForm() {
+  showEntryPage('desktop');
+  setEntryMessage('');
+  window.setTimeout(() => {
+    els.desktopAccountInput?.focus();
+  }, 30);
+}
+
+function backToEntrySelection() {
+  showEntryPage('select');
+  setEntryMessage('');
+}
+
+function showEntryPage(page) {
+  if (els.entrySelectPage) {
+    els.entrySelectPage.hidden = page !== 'select';
+  }
+  if (els.entryDesktopPage) {
+    els.entryDesktopPage.hidden = page !== 'desktop';
+  }
+}
+
+function closeEntryModal() {
+  els.entryModal?.classList.remove('active');
+  els.entryModal?.setAttribute('aria-hidden', 'true');
+}
+
+function setEntryMessage(message, type = '') {
+  if (!els.entryMessage) return;
+  els.entryMessage.textContent = message || '';
+  els.entryMessage.className = 'entry-message';
+  if (type) els.entryMessage.classList.add(type);
+}
+
+function grantAccess(mode, user) {
+  state.accessGranted = true;
+  state.entryMode = mode || '';
+  state.desktopUser = user || null;
+}
+
+function continueAsMobile() {
+  grantAccess('mobile', null);
+  closeEntryModal();
+  openKeyboardModal();
+}
+
+function handleDesktopLoginEnter(event) {
+  if (event.key !== 'Enter') return;
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const target = event.target;
+
+  if (target === els.desktopAccountInput) {
+    if (!String(els.desktopPasswordInput?.value || '').trim()) {
+      els.desktopPasswordInput?.focus();
+      els.desktopPasswordInput?.select?.();
+      return;
+    }
   }
 
-  .stats-ticket-code,
-  .stats-ticket-count {
-    font-size: 0.84rem;
+  if (target === els.desktopPasswordInput || target === els.desktopAccountInput) {
+    submitDesktopLogin();
+  }
+}
+
+async function submitDesktopLogin() {
+  const account = String(els.desktopAccountInput?.value || '').trim();
+  const password = String(els.desktopPasswordInput?.value || '').trim();
+
+  if (!account || !password) {
+    setEntryMessage('請輸入帳號與密碼', 'error');
+    return;
   }
 
-  .stats-ticket-count {
-    min-width: 64px;
-    padding: 6px 8px;
+  if (els.desktopLoginBtn) els.desktopLoginBtn.disabled = true;
+  setEntryMessage('登入中...');
+
+  try {
+    const res = await apiRequest('loginFrontDesk', { account, password }, 'POST');
+    const loginUser = res.user || { account, name: account };
+    const redirectUrl = buildAdminRedirectUrl_(res, loginUser);
+
+    grantAccess('desktop', loginUser);
+    persistAdminJumpContext_(res, loginUser);
+    window.location.href = redirectUrl;
+  } catch (error) {
+    setEntryMessage(error.message || '登入失敗', 'error');
+  } finally {
+    if (els.desktopLoginBtn) els.desktopLoginBtn.disabled = false;
   }
+}
+
+function buildAdminRedirectUrl_(loginRes, loginUser) {
+  const adminExecUrl = String(loginRes?.adminExecUrl || CONFIG.adminExecUrl || '').trim();
+
+  if (!adminExecUrl) {
+    throw new Error('尚未設定後台 GAS Web App URL');
+  }
+
+  if (adminExecUrl.includes('PASTE_NEW_WEB_GS_EXEC_URL_HERE')) {
+    throw new Error('請先把 adminExecUrl 改成新的後台 Web App 網址');
+  }
+
+  const url = new URL(adminExecUrl);
+
+  if (loginUser?.account) {
+    url.searchParams.set('fromAccount', loginUser.account);
+  }
+  if (loginUser?.name) {
+    url.searchParams.set('fromName', loginUser.name);
+  }
+
+  url.searchParams.set('fromMode', 'desktop-old-login');
+  return url.toString();
+}
+
+function persistAdminJumpContext_(loginRes, loginUser) {
+  const adminExecUrl = String(loginRes?.adminExecUrl || CONFIG.adminExecUrl || '').trim();
+  const adminContext = {
+    adminExecUrl: adminExecUrl && !adminExecUrl.includes('PASTE_NEW_WEB_GS_EXEC_URL_HERE') ? adminExecUrl : '',
+    fromAccount: loginUser?.account || '',
+    fromName: loginUser?.name || '',
+    loggedAt: new Date().toISOString(),
+  };
+
+  try {
+    sessionStorage.setItem('AGENCY_ADMIN_BOOTSTRAP', JSON.stringify(adminContext));
+  } catch (error) {
+    console.warn('後台跳轉資訊寫入失敗', error);
+  }
+}
+
+function toggleBluetooth() {
+  if (state.isConnected) {
+    setConnectionState(false);
+    addSystemLog('藍牙已斷開');
+    return;
+  }
+  els.pairingModal?.classList.add('active');
+  els.pairingModal?.setAttribute('aria-hidden', 'false');
+}
+
+function closePairing() {
+  els.pairingModal?.classList.remove('active');
+  els.pairingModal?.setAttribute('aria-hidden', 'true');
+  focusTrap();
+}
+
+async function manualConnect() {
+  closePairing();
+  await setConnectionState(true);
+  addSystemLog('藍牙已配對');
+}
+
+async function setConnectionState(connected) {
+  state.isConnected = connected;
+  els.btStatusBtn?.classList.toggle('bt-connected', connected);
+  if (els.btText) els.btText.innerText = connected ? '已連線' : '未連線';
+
+  if (connected) {
+    setDisplay('LINKED', 'success');
+    await requestWakeLock();
+    window.setTimeout(() => {
+      if (els.displayValue?.textContent === 'LINKED') setDisplay('READY', 'waiting');
+    }, 1200);
+  } else {
+    releaseWakeLock();
+    setDisplay('READY', 'waiting');
+  }
+}
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    if (state.wakeLock) return;
+    state.wakeLock = await navigator.wakeLock.request('screen');
+    state.wakeLock.addEventListener?.('release', () => {
+      state.wakeLock = null;
+    });
+  } catch (error) {
+    console.warn('WakeLock failed', error);
+  }
+}
+
+async function releaseWakeLock() {
+  if (!state.wakeLock) return;
+  try {
+    await state.wakeLock.release();
+  } catch (error) {
+    console.warn('WakeLock release failed', error);
+  } finally {
+    state.wakeLock = null;
+  }
+}
+
+function handleScannerKeydown(event) {
+  if (!state.accessGranted) return;
+  if (els.keyboardModal?.classList.contains('active')) return;
+  if (els.pairingModal?.classList.contains('active')) return;
+  if (state.scannerRunning) return;
+
+  if (event.key === 'Enter') {
+    if (state.scanBuffer.length > 0) {
+      const finalValue = state.scanBuffer.trim();
+      state.scanBuffer = '';
+      clearTimeout(state.scanTimeout);
+      if (finalValue === 'GATELINK_PAIRING_ACTION') {
+        manualConnect();
+      } else {
+        handleScanInput(finalValue, 'keyboard');
+      }
+    }
+    return;
+  }
+
+  if (event.key.length === 1) {
+    state.scanBuffer += event.key;
+    clearTimeout(state.scanTimeout);
+    state.scanTimeout = window.setTimeout(() => {
+      state.scanBuffer = '';
+    }, 120);
+  }
+}
+
+function focusTrap() {
+  if (!state.accessGranted) return;
+  if (els.entryModal?.classList.contains('active')) return;
+  if (els.keyboardModal?.classList.contains('active')) return;
+  if (state.scannerRunning) return;
+  els.scanInputTrap?.focus({ preventScroll: true });
+}
+
+async function openCamera() {
+  if (!state.accessGranted) {
+    openEntrySelection();
+    return;
+  }
+  if (typeof window.Html5Qrcode === 'undefined') {
+    window.alert('QR 套件尚未載入，請重新整理後再試。');
+    return;
+  }
+
+  if (state.cameraLocked || state.scannerRunning) return;
+  state.cameraLocked = true;
+
+  if (!state.scannerReaderEl) {
+    throw new Error('找不到掃描器容器，請確認 HTML 內是否存在 #qr-reader 或 #scanner-reader');
+  }
+
+  try {
+    els.body?.classList.remove('history-mode');
+
+    if (!state.html5Qrcode) {
+      const readerId = state.scannerReaderEl?.id || 'qr-reader';
+      state.html5Qrcode = new Html5Qrcode(readerId);
+    }
+
+    state.scannerModalEl?.classList.add('active');
+    state.scannerModalEl?.setAttribute('aria-hidden', 'false');
+    if (state.scannerStatusEl) state.scannerStatusEl.textContent = '啟動鏡頭中...';
+
+    const config = {
+      fps: 10,
+      qrbox: (viewfinderWidth, viewfinderHeight) => {
+        const side = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.72);
+        return { width: side, height: side };
+      },
+      aspectRatio: 1.0,
+      disableFlip: false,
+      rememberLastUsedCamera: true,
+    };
+
+    let started = false;
+
+    try {
+      await state.html5Qrcode.start(
+        { facingMode: { exact: 'environment' } },
+        config,
+        onCameraScanSuccess,
+        onCameraScanFailure
+      );
+      started = true;
+    } catch (e1) {
+      try {
+        await state.html5Qrcode.start(
+          { facingMode: 'environment' },
+          config,
+          onCameraScanSuccess,
+          onCameraScanFailure
+        );
+        started = true;
+      } catch (e2) {
+        const devices = await Html5Qrcode.getCameras();
+        if (!devices || !devices.length) {
+          throw new Error('找不到可用鏡頭');
+        }
+
+        const backCam =
+          devices.find((d) => /back|rear|environment/gi.test(d.label || '')) || devices[0];
+
+        await state.html5Qrcode.start(
+          { deviceId: { exact: backCam.id } },
+          config,
+          onCameraScanSuccess,
+          onCameraScanFailure
+        );
+        started = true;
+      }
+    }
+
+    if (started) {
+      state.scannerRunning = true;
+      if (state.scannerStatusEl) state.scannerStatusEl.textContent = '請將 QR Code 對準框內';
+      addSystemLog('相機掃描已啟動');
+    }
+  } catch (error) {
+    console.error('相機啟動失敗', error);
+    await closeCameraScanner(false);
+    reportClientError(`[相機啟動失敗] ${error.message}`, error.stack || '');
+    window.alert(`無法開啟相機：${error.message}`);
+  } finally {
+    state.cameraLocked = false;
+  }
+}
+
+function onCameraScanFailure() {
+  // 持續掃描中，不做提示
+}
+
+async function onCameraScanSuccess(decodedText) {
+  if (state.cameraLocked) return;
+  state.cameraLocked = true;
+
+  try {
+    if (state.scannerStatusEl) state.scannerStatusEl.textContent = '已掃描成功，正在驗證...';
+    playSuccessBeeps(1);
+    await closeCameraScanner(false);
+    handleScanInput(decodedText, 'camera');
+  } catch (error) {
+    console.error('掃描後處理失敗', error);
+    reportClientError(`[掃描後處理失敗] ${error.message}`, error.stack || '');
+  } finally {
+    window.setTimeout(() => {
+      state.cameraLocked = false;
+    }, 300);
+  }
+}
+
+async function closeCameraScanner(refocus = true) {
+  try {
+    if (state.html5Qrcode) {
+      const isScanning =
+        typeof state.html5Qrcode.isScanning === 'function'
+          ? state.html5Qrcode.isScanning()
+          : state.scannerRunning;
+
+      if (isScanning) {
+        await state.html5Qrcode.stop();
+      }
+
+      try {
+        await state.html5Qrcode.clear();
+      } catch (_) {
+        // ignore
+      }
+    }
+  } catch (error) {
+    console.warn('關閉掃描器失敗', error);
+  } finally {
+    state.scannerRunning = false;
+    state.scannerModalEl?.classList.remove('active');
+    state.scannerModalEl?.setAttribute('aria-hidden', 'true');
+    if (state.scannerStatusEl) state.scannerStatusEl.textContent = '啟動鏡頭中...';
+    if (refocus) focusTrap();
+  }
+}
+
+// 保留舊功能，避免其他地方呼叫報錯
+async function handleImageScan(event) {
+  const file = event?.target?.files && event.target.files[0];
+  if (!file) {
+    focusTrap();
+    return;
+  }
+
+  if (typeof window.Html5Qrcode === 'undefined') {
+    window.alert('QR 套件尚未載入。');
+    focusTrap();
+    return;
+  }
+
+  setDisplay('解析中...', 'waiting');
+
+  try {
+    if (!state.html5Qrcode) {
+      const tempId = 'hidden-qr-reader';
+      let tempEl = document.getElementById(tempId);
+      if (!tempEl) {
+        tempEl = document.createElement('div');
+        tempEl.id = tempId;
+        tempEl.style.cssText =
+          'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;';
+        document.body.appendChild(tempEl);
+      }
+      state.html5Qrcode = new Html5Qrcode(tempId);
+    }
+
+    const decodedText = await state.html5Qrcode.scanFile(file, true);
+    handleScanInput(decodedText, 'camera');
+  } catch (error) {
+    console.warn('圖片解析失敗', error);
+    setDisplay('READY', 'waiting');
+    window.alert('無法辨識圖片中的 QR Code，請確認畫面清晰後再試。');
+  } finally {
+    if (els.qrFileInput) els.qrFileInput.value = '';
+    focusTrap();
+  }
+}
+
+function extractPrefix(code) {
+  const match = String(code || '').match(/^([A-Z]+)/i);
+  return match ? match[1].toUpperCase() : '';
+}
+
+function resolveSoundRule(prefix) {
+  const raw = state.localSoundRules[prefix];
+  if (!raw) return { sound: 1, name: '' };
+  if (typeof raw === 'number') return { sound: raw, name: '' };
+  return {
+    sound: Number(raw.sound || 1),
+    name: String(raw.name || ''),
+  };
+}
+
+function playDuplicateSound() {
+  beep(880, 100, 'square');
+  window.setTimeout(() => beep(440, 300, 'square'), 120);
+}
+
+function playSuccessBeeps(count) {
+  const total = Math.max(1, Number(count || 1));
+  const gap = 220;
+  for (let i = 0; i < total; i += 1) {
+    window.setTimeout(() => beep(900, 180, 'square'), i * gap);
+  }
+}
+
+function playErrorBeep() {
+  beep(440, 900, 'square');
+}
+
+let audioCtx;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function beep(freq, duration, type = 'square') {
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration / 1000);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration / 1000);
+  } catch (error) {
+    console.warn('beep failed', error);
+  }
+}
+
+async function apiRequest(action, payload = {}, method = 'POST') {
+  const baseUrl = String(CONFIG.apiBaseUrl || '').trim();
+  if (!baseUrl || baseUrl.includes('PASTE_YOUR_APPS_SCRIPT_EXEC_URL_HERE')) {
+    throw new Error('尚未設定 Apps Script Web App URL');
+  }
+
+  if (method === 'GET') {
+    const url = new URL(baseUrl);
+    url.searchParams.set('action', action);
+    Object.entries(payload || {}).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        url.searchParams.set(key, typeof value === 'string' ? value : JSON.stringify(value));
+      }
+    });
+    const response = await fetch(url.toString(), { method: 'GET', redirect: 'follow' });
+    return handleApiResponse(response);
+  }
+
+  const response = await fetch(baseUrl, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8',
+    },
+    body: JSON.stringify({ action, payload }),
+  });
+  return handleApiResponse(response);
+}
+
+async function handleApiResponse(response) {
+  const text = await response.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    throw new Error(`API 回應不是 JSON：${text.slice(0, 200)}`);
+  }
+
+  if (!response.ok) {
+    throw new Error(data && data.message ? data.message : `HTTP ${response.status}`);
+  }
+
+  if (data && data.ok === false) {
+    throw new Error(data.message || 'API 執行失敗');
+  }
+
+  return data;
+}
+
+async function performSystemCheck() {
+  try {
+    addSystemLog('正在檢查雲端路徑...');
+    const res = await apiRequest('ping', {}, 'GET');
+    addSystemLog(res.message || '雲端檢查完成', 'st-ok');
+  } catch (error) {
+    console.error(error);
+    addSystemLog(`路徑異常：${error.message}`, 'st-exp');
+    updateSyncStatus('路徑異常');
+  }
+}
+
+async function fetchSystemSettings() {
+  try {
+    const res = await apiRequest('getSystemSettings', {}, 'GET');
+    if (res.settings) {
+      state.systemSettings = Object.assign({}, state.systemSettings, res.settings);
+      applyAutoSyncInterval(state.systemSettings.autoSyncMinutes);
+      saveToStorage();
+    }
+  } catch (error) {
+    console.warn('讀取參數失敗', error);
+  }
+}
+
+async function fetchTodayStats() {
+  try {
+    const res = await apiRequest('getTodayStats', {}, 'GET');
+    if (typeof res.todayVisitorCount !== 'undefined') {
+      renderTodayVisitorCount(res.todayVisitorCount);
+    } else {
+      renderTodayVisitorCount();
+    }
+
+    if (Array.isArray(res.todayTicketSummary)) {
+      state.todayTicketSummary = res.todayTicketSummary;
+      if (state.ticketSummaryOpen) {
+        renderTicketSummaryRows(state.todayTicketSummary);
+      }
+    }
+  } catch (error) {
+    console.warn('讀取當日進場人數失敗', error);
+    renderTodayVisitorCount();
+    if (state.ticketSummaryOpen) {
+      renderTicketSummaryRows(state.todayTicketSummary);
+    }
+  }
+}
+
+function autoSync() {
+  forceSync({ silent: true });
+}
+
+async function forceSync(options = {}) {
+  const silent = Boolean(options.silent);
+  if (!silent) updateSyncStatus('同步中...', true);
+
+  const batch = [...state.uploadQueue];
+
+  try {
+    const res = await apiRequest('syncTodayData', { records: batch }, 'POST');
+
+    const syncedKeys = new Set(batch.map((item) => `${item.time}|${item.content}|${item.raw || ''}`));
+    state.uploadQueue = state.uploadQueue.filter(
+      (item) => !syncedKeys.has(`${item.time}|${item.content}|${item.raw || ''}`)
+    );
+
+    if (Array.isArray(res.data)) {
+      state.localHistory = res.data.map((row) => ({
+        time: row[0] || '00:00:00',
+        code: row[1] || '',
+        status: 'ok',
+        className: 'st-ok',
+      }));
+    }
+
+    if (typeof res.todayVisitorCount !== 'undefined') {
+      state.todayVisitorCount = Number(res.todayVisitorCount) || 0;
+    } else {
+      state.todayVisitorCount = getLocalSuccessCount();
+    }
+
+    if (Array.isArray(res.todayTicketSummary)) {
+      state.todayTicketSummary = res.todayTicketSummary;
+    }
+
+    if (res.validation) state.localValidationDB = res.validation;
+    if (res.whitelist) state.localWhiteListRules = res.whitelist;
+    if (res.soundRules) state.localSoundRules = res.soundRules;
+    if (res.settings) {
+      state.systemSettings = Object.assign({}, state.systemSettings, res.settings);
+      applyAutoSyncInterval(state.systemSettings.autoSyncMinutes);
+    }
+
+    saveToStorage();
+    renderLogList();
+    renderTodayVisitorCount();
+
+    if (state.ticketSummaryOpen) {
+      renderTicketSummaryRows(state.todayTicketSummary);
+    }
+
+    if (!silent) {
+      updateSyncStatus(res.message || '同步完成');
+      window.setTimeout(() => updateSyncStatus('系統待機'), 3000);
+    }
+  } catch (error) {
+    console.error(error);
+    if (!silent) updateSyncStatus('同步失敗');
+    addSystemLog(`同步失敗：${error.message}`, 'st-exp');
+  } finally {
+    if (!silent) {
+      updateSyncStatus(els.syncText?.innerText || '系統待機', false);
+    } else {
+      updateSyncStatus('系統待機', false);
+    }
+  }
+}
+
+async function reportClientError(message, stack = '') {
+  console.error(message, stack);
+  try {
+    await apiRequest('logClientError', { message, stack }, 'POST');
+  } catch (error) {
+    console.warn('上報錯誤失敗', error);
+  }
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
