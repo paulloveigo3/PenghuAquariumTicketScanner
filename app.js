@@ -67,13 +67,7 @@ function init() {
   fetchSystemSettings();
   fetchTodayStats();
 
-  if (
-    Object.keys(state.localValidationDB).length === 0 ||
-    Object.keys(state.localSoundRules).length === 0 ||
-    state.localWhiteListRules.length === 0
-  ) {
-    forceSync();
-  }
+  forceSync({ silent: true });
 }
 
 function cacheDom() {
@@ -196,13 +190,14 @@ function bindEvents() {
   });
 
   document.addEventListener('visibilitychange', async () => {
-    if (document.visibilityState === 'visible' && state.isConnected) {
-      await requestWakeLock();
-      if (!state.scannerRunning) focusTrap();
-    } else if (document.visibilityState === 'hidden' && state.scannerRunning) {
-      await closeCameraScanner(false);
-    }
-  });
+  if (document.visibilityState === 'visible' && state.isConnected) {
+    await requestWakeLock();
+    await forceSync({ silent: true });
+    if (!state.scannerRunning) focusTrap();
+  } else if (document.visibilityState === 'hidden' && state.scannerRunning) {
+    await closeCameraScanner(false);
+  }
+});
 }
 
 function handleDocumentClick(event) {
@@ -1486,12 +1481,13 @@ async function fetchTodayStats() {
 }
 
 function autoSync() {
-  if (state.uploadQueue.length === 0) return;
-  forceSync();
+  forceSync({ silent: true });
 }
 
-async function forceSync() {
-  updateSyncStatus('同步中...', true);
+async function forceSync(options = {}) {
+  const silent = Boolean(options.silent);
+  if (!silent) updateSyncStatus('同步中...', true);
+
   const batch = [...state.uploadQueue];
 
   try {
@@ -1528,14 +1524,21 @@ async function forceSync() {
     saveToStorage();
     renderLogList();
     renderTodayVisitorCount();
-    updateSyncStatus(res.message || '同步完成');
-    window.setTimeout(() => updateSyncStatus('系統待機'), 3000);
+
+    if (!silent) {
+      updateSyncStatus(res.message || '同步完成');
+      window.setTimeout(() => updateSyncStatus('系統待機'), 3000);
+    }
   } catch (error) {
     console.error(error);
-    updateSyncStatus('同步失敗');
+    if (!silent) updateSyncStatus('同步失敗');
     addSystemLog(`同步失敗：${error.message}`, 'st-exp');
   } finally {
-    updateSyncStatus(els.syncText?.innerText || '系統待機', false);
+    if (!silent) {
+      updateSyncStatus(els.syncText?.innerText || '系統待機', false);
+    } else {
+      updateSyncStatus('系統待機', false);
+    }
   }
 }
 
