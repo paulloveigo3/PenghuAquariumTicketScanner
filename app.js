@@ -915,6 +915,39 @@ function formatGujiRedeemTicketNo_(no) {
   return CONFIG.gujiRedeem.ticketPrefix + String(no).padStart(7, '0');
 }
 
+
+function isGujiTestCode_(value) {
+  return /^TEST\d{2}[A-Z]{26}$/i.test(String(value || '').trim());
+}
+
+function getGujiTestLabel_(value) {
+  const code = String(value || '').trim().toUpperCase();
+  const match = code.match(/^(TEST\d{2})[A-Z]{26}$/);
+  return match ? match[1] : code.slice(0, 6);
+}
+
+function buildReadablePath_(value) {
+  try {
+    if (!value) return '(未設定)';
+    if (/^https?:\/\//i.test(String(value))) return String(value);
+    return new URL(String(value), window.location.href).href;
+  } catch (error) {
+    return String(value || '(未設定)');
+  }
+}
+
+function processGujiTestCode_(rawInput, time) {
+  const code = String(rawInput || '').trim().toUpperCase();
+  const label = getGujiTestLabel_(code);
+
+  setDisplayWithSubline(label, '測試模式：不寫入DB / 不計人數', 'warning');
+  showUserInfo('TEST 測試碼已攔截', '僅寫入 SESSION LOG');
+  addSystemLog('TEST 命中：' + label, 'st-warn');
+  addSystemLog('TEST API 路徑：' + buildReadablePath_(CONFIG.apiBaseUrl), 'st-sys');
+  addSystemLog('TEST 簽名檔：' + buildReadablePath_(CONFIG.gujiRedeem?.signaturesJsonUrl), 'st-sys');
+  addLogToUI({ time: time, code: label + ' (TEST BYPASS)', className: 'st-warn' });
+}
+
 async function loadGujiRedeemData() {
   if (!CONFIG.gujiRedeem.enabled) return;
   if (state.gujiRedeem.loading || state.gujiRedeem.ready) return;
@@ -1019,6 +1052,11 @@ function processLocalLogic(rawInput, originalRaw = rawInput) {
 
   if (rawInput.includes(',')) {
     processTicketLikeRecord(rawInput, originalRaw, time, fullTime, todayYmdCompact);
+    return;
+  }
+
+  if (isGujiTestCode_(rawInput)) {
+    processGujiTestCode_(rawInput, time);
     return;
   }
 
