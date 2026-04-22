@@ -15,6 +15,13 @@ const CONFIG = {
     startNo: 270001,
     endNo: 280000,
   },
+
+  agencyAes: {
+    enabled: true,
+    bootstrapAction: 'getAgencyAesBootstrap',
+    startNo: 280001,
+    endNo: 1000000,
+  },
 };
 
 const state = {
@@ -60,6 +67,27 @@ const state = {
     signatureToTicket: {},
     count: 0,
   },
+
+  agencyAes: {
+    ready: false,
+    loading: false,
+    loadError: '',
+    aesKey: '',
+    aesIv: '',
+    sheetUpdatedAt: '',
+    issueTicketFileId: '',
+    travelAgencyDbId: '',
+    totalAgencies: 0,
+    totalRecords: 0,
+    agencyNames: [],
+    ranges: [],
+    bitmapReady: false,
+    bitmapUpdatedAt: '',
+    bitmapStart: 1,
+    bitmapEnd: 1000000,
+    bitmapBits: '',
+    optimisticUsed: {},
+  },
 };
 
 const els = {};
@@ -86,6 +114,7 @@ function init() {
   openEntrySelection();
 
   loadGujiRedeemData();
+  loadAgencyAesBootstrap(true);
   performSystemCheck();
   fetchSystemSettings();
   fetchTodayStats();
@@ -287,6 +316,7 @@ function loadFromStorage() {
 
     state.localValidationDB = safeJsonParse(localStorage.getItem(storageKey('localValidationDB')), {});
     state.localWhiteListRules = safeJsonParse(localStorage.getItem(storageKey('localWhiteListRules')), []);
+    hydrateAgencyAesBootstrapFromStorage_();
   } catch (error) {
     console.error('Storage Error', error);
     addSystemLog('本機快取讀取失敗', 'st-exp');
@@ -310,6 +340,73 @@ function safeJsonParse(text, fallback) {
   } catch (error) {
     return fallback;
   }
+}
+
+
+function hydrateAgencyAesBootstrapFromStorage_() {
+  const cached = safeJsonParse(localStorage.getItem(storageKey('agencyAesBootstrap')), null);
+  if (cached) {
+    applyAgencyAesBootstrap_(cached);
+  }
+  const optimisticUsed = safeJsonParse(localStorage.getItem(storageKey('agencyAesOptimisticUsed')), {});
+  state.agencyAes.optimisticUsed = optimisticUsed && typeof optimisticUsed === 'object' ? optimisticUsed : {};
+}
+
+function persistAgencyAesBootstrap_() {
+  const payload = {
+    aes: {
+      key: state.agencyAes.aesKey,
+      iv: state.agencyAes.aesIv,
+      updatedAt: state.agencyAes.sheetUpdatedAt,
+      travelAgencyDbId: state.agencyAes.travelAgencyDbId,
+      issueTicketDbId: state.agencyAes.issueTicketFileId,
+    },
+    issueTicket: {
+      totalAgencies: state.agencyAes.totalAgencies,
+      totalRecords: state.agencyAes.totalRecords,
+      agencyNames: state.agencyAes.agencyNames,
+      ranges: state.agencyAes.ranges,
+    },
+    bitmap: {
+      updatedAt: state.agencyAes.bitmapUpdatedAt,
+      start: state.agencyAes.bitmapStart,
+      end: state.agencyAes.bitmapEnd,
+      bits: state.agencyAes.bitmapBits,
+    },
+  };
+
+  localStorage.setItem(storageKey('agencyAesBootstrap'), JSON.stringify(payload));
+  persistAgencyAesOptimisticUsed_();
+}
+
+function persistAgencyAesOptimisticUsed_() {
+  localStorage.setItem(storageKey('agencyAesOptimisticUsed'), JSON.stringify(state.agencyAes.optimisticUsed || {}));
+}
+
+function applyAgencyAesBootstrap_(payload) {
+  const aes = payload && payload.aes ? payload.aes : {};
+  const issueTicket = payload && payload.issueTicket ? payload.issueTicket : {};
+  const bitmap = payload && payload.bitmap ? payload.bitmap : {};
+
+  state.agencyAes.aesKey = String(aes.key || '').trim();
+  state.agencyAes.aesIv = String(aes.iv || '').trim();
+  state.agencyAes.sheetUpdatedAt = String(aes.updatedAt || '').trim();
+  state.agencyAes.travelAgencyDbId = String(aes.travelAgencyDbId || '').trim();
+  state.agencyAes.issueTicketFileId = String(aes.issueTicketDbId || issueTicket.fileId || '').trim();
+  state.agencyAes.totalAgencies = Number(issueTicket.totalAgencies || 0);
+  state.agencyAes.totalRecords = Number(issueTicket.totalRecords || 0);
+  state.agencyAes.agencyNames = Array.isArray(issueTicket.agencyNames) ? issueTicket.agencyNames : [];
+  state.agencyAes.ranges = Array.isArray(issueTicket.ranges) ? issueTicket.ranges : [];
+
+  state.agencyAes.bitmapUpdatedAt = String(bitmap.updatedAt || '').trim();
+  state.agencyAes.bitmapStart = Number(bitmap.start || 1);
+  state.agencyAes.bitmapEnd = Number(bitmap.end || 1000000);
+  if (typeof bitmap.bits === 'string' && bitmap.bits) {
+    state.agencyAes.bitmapBits = bitmap.bits;
+  }
+  state.agencyAes.bitmapReady = typeof state.agencyAes.bitmapBits === 'string' && state.agencyAes.bitmapBits.length > 0;
+
+  state.agencyAes.ready = Boolean(state.agencyAes.aesKey && state.agencyAes.aesIv && state.agencyAes.ranges.length);
 }
 
 function sanitizeAutoSyncMinutes(value) {
@@ -899,6 +996,178 @@ function handleScanInput(data, source = 'keyboard') {
 }
 
 
+
+async function loadAgencyAesBootstrap(includeBitmap = true, force = false) {
+  if (!CONFIG.agencyAes.enabled) return;
+  if (state.agencyAes.loading) return;
+  if (!force && state.agencyAes.ready && (!includeBitmap || state.agencyAes.bitmapReady)) return;
+
+  state.agencyAes.loading = true;
+  state.agencyAes.loadError = '';
+
+  try {
+    const res = await apiRequest(CONFIG.agencyAes.bootstrapAction, { includeBitmap: !!includeBitmap }, 'POST');
+    const payload = res && res.agencyAes ? res.agencyAes : null;
+    if (!payload || !payload.aes) {
+      throw new Error('AES 啟動資料缺失');
+    }
+
+    applyAgencyAesBootstrap_(payload);
+    persistAgencyAesBootstrap_();
+    addSystemLog(
+      'AES/旅行社資料載入完成：' +
+      state.agencyAes.totalAgencies +
+      ' 間｜區段 ' +
+      state.agencyAes.ranges.length +
+      (state.agencyAes.bitmapReady ? '｜bitmap 已載入' : '｜bitmap 未載入'),
+      'st-ok'
+    );
+  } catch (error) {
+    console.error('loadAgencyAesBootstrap failed', error);
+    state.agencyAes.loadError = error && error.message ? error.message : '未知錯誤';
+    addSystemLog('AES/旅行社資料載入失敗：' + state.agencyAes.loadError, 'st-exp');
+  } finally {
+    state.agencyAes.loading = false;
+  }
+}
+
+async function refreshAgencyAesBitmapIfChanged_() {
+  if (!CONFIG.agencyAes.enabled) return;
+  if (state.agencyAes.loading) return;
+
+  try {
+    const res = await apiRequest(CONFIG.agencyAes.bootstrapAction, { includeBitmap: false }, 'POST');
+    const payload = res && res.agencyAes ? res.agencyAes : null;
+    const remoteUpdatedAt = String(payload && payload.bitmap && payload.bitmap.updatedAt ? payload.bitmap.updatedAt : '').trim();
+    if (!remoteUpdatedAt) return;
+    if (remoteUpdatedAt === String(state.agencyAes.bitmapUpdatedAt || '').trim()) return;
+
+    await loadAgencyAesBootstrap(true, true);
+    addSystemLog('bitmap 已更新並重新載入', 'st-ok');
+  } catch (error) {
+    console.warn('refreshAgencyAesBitmapIfChanged failed', error);
+  }
+}
+
+function normalizeTicketNoToNumber_(ticketNo) {
+  const m = String(ticketNo || '').trim().toUpperCase().match(/^B0*(\d{1,7})$/);
+  if (!m) return 0;
+  const no = Number(m[1]);
+  return Number.isFinite(no) ? no : 0;
+}
+
+function getAgencyNameByTicketNo_(ticketNo) {
+  const no = normalizeTicketNoToNumber_(ticketNo);
+  if (!no) return '無';
+
+  const ranges = Array.isArray(state.agencyAes.ranges) ? state.agencyAes.ranges : [];
+  for (let i = 0; i < ranges.length; i += 1) {
+    const range = ranges[i] || {};
+    if (no >= Number(range.startNo || 0) && no <= Number(range.endNo || 0)) {
+      return String(range.agencyName || '無').trim() || '無';
+    }
+  }
+
+  return '無';
+}
+
+function decryptAgencyAesHexToTicketNo_(rawInput) {
+  const code = String(rawInput || '').trim().toUpperCase();
+  if (!isGujiRedeemHex_(code)) return '';
+  if (!state.agencyAes.ready) return '';
+  if (typeof window.CryptoJS === 'undefined') return '';
+
+  try {
+    const key = window.CryptoJS.enc.Utf8.parse(state.agencyAes.aesKey);
+    const iv = window.CryptoJS.enc.Utf8.parse(state.agencyAes.aesIv);
+    const cipherWords = window.CryptoJS.enc.Hex.parse(code);
+    const cipherParams = window.CryptoJS.lib.CipherParams.create({ ciphertext: cipherWords });
+    const decrypted = window.CryptoJS.AES.decrypt(cipherParams, key, {
+      iv: iv,
+      mode: window.CryptoJS.mode.CBC,
+      padding: window.CryptoJS.pad.Pkcs7,
+    });
+    const text = window.CryptoJS.enc.Utf8.stringify(decrypted).replace(/[\u0000]+/g, '').trim().toUpperCase();
+    if (!/^B\d{7}$/.test(text)) return '';
+
+    const no = normalizeTicketNoToNumber_(text);
+    if (!no) return '';
+    if (no < Number(CONFIG.agencyAes.startNo) || no > Number(CONFIG.agencyAes.endNo)) return '';
+    return text;
+  } catch (error) {
+    return '';
+  }
+}
+
+function resolveAgencyAesTicket_(rawInput) {
+  const ticketNo = decryptAgencyAesHexToTicketNo_(rawInput);
+  if (!ticketNo) return null;
+
+  return {
+    raw: String(rawInput || '').trim().toUpperCase(),
+    ticketNo: ticketNo,
+    agencyName: getAgencyNameByTicketNo_(ticketNo),
+  };
+}
+
+function isTicketMarkedUsedInBitmap_(ticketNo) {
+  const normalized = String(ticketNo || '').trim().toUpperCase();
+  if (!/^B\d{7}$/.test(normalized)) return false;
+  if (state.agencyAes.optimisticUsed && state.agencyAes.optimisticUsed[normalized]) return true;
+  if (!state.agencyAes.bitmapReady || typeof state.agencyAes.bitmapBits !== 'string') return false;
+
+  const no = normalizeTicketNoToNumber_(normalized);
+  if (!no) return false;
+  const offset = no - Number(state.agencyAes.bitmapStart || 1);
+  if (offset < 0 || offset >= state.agencyAes.bitmapBits.length) return false;
+  return state.agencyAes.bitmapBits.charAt(offset) === '1';
+}
+
+function markTicketUsedLocally_(ticketNo) {
+  const normalized = String(ticketNo || '').trim().toUpperCase();
+  if (!/^B\d{7}$/.test(normalized)) return;
+  state.agencyAes.optimisticUsed[normalized] = 1;
+  persistAgencyAesOptimisticUsed_();
+}
+
+function processAgencyAesCard(resolved, originalRaw, time, fullTime) {
+  clearLastArmableTicket();
+
+  const ticketNo = String(resolved.ticketNo || '').trim().toUpperCase();
+  if (!ticketNo) return;
+
+  const agencyName = String(resolved.agencyName || '無').trim() || '無';
+  const isDuplicate = state.localHistory.some(function (item) {
+    return item && item.code === ticketNo && item.status === 'ok';
+  });
+  const alreadyUsed = isTicketMarkedUsedInBitmap_(ticketNo);
+
+  if (isDuplicate || alreadyUsed) {
+    playDuplicateSound();
+    setDisplayWithSubline('已使用票號', ticketNo + '｜' + agencyName, 'warning');
+    showUserInfo('AES 解碼票', '此票已核銷 / 已使用');
+    addLogToUI({ time: time, code: ticketNo + ' (' + agencyName + '｜已使用)', className: 'st-warn' });
+    return;
+  }
+
+  playSuccessBeeps(1);
+  setDisplayWithSubline(ticketNo, agencyName, 'success');
+  showUserInfo('AES 解碼成功', '旅行社：' + agencyName);
+
+  const record = {
+    code: ticketNo,
+    time: time,
+    fullTime: fullTime,
+    status: 'ok',
+    className: 'st-ok',
+    kind: 'agency_aes',
+    agencyName: agencyName,
+  };
+
+  pushRecord(record, originalRaw || resolved.raw || ticketNo);
+  markTicketUsedLocally_(ticketNo);
+}
+
 function isGujiRedeemHex_(value) {
   return /^[0-9A-F]{32}$/i.test(String(value || '').trim());
 }
@@ -1021,8 +1290,9 @@ function processGujiRedeemCard(resolved, originalRaw, time, fullTime) {
   const isDuplicate = state.localHistory.some(function (item) {
     return item && item.code === ticketNo && item.status === 'ok';
   });
+  const alreadyUsed = isTicketMarkedUsedInBitmap_(ticketNo);
 
-  if (isDuplicate) {
+  if (isDuplicate || alreadyUsed) {
     playDuplicateSound();
     setDisplayWithSubline('重複核銷', ticketNo, 'warning');
     showUserInfo('古吉核銷碼', '此票已使用');
@@ -1043,6 +1313,7 @@ function processGujiRedeemCard(resolved, originalRaw, time, fullTime) {
     kind: 'guji_redeem',
   };
   pushRecord(record, originalRaw || resolved.raw || ticketNo);
+  markTicketUsedLocally_(ticketNo);
 }
 
 
@@ -1081,7 +1352,22 @@ function processLocalLogic(rawInput, originalRaw = rawInput) {
   }
 
   if (isGujiRedeemHex_(rawInput)) {
+    if (state.agencyAes.ready) {
+      const resolvedAgency = resolveAgencyAesTicket_(rawInput);
+      if (resolvedAgency) {
+        processAgencyAesCard(resolvedAgency, originalRaw, time, fullTime);
+        return;
+      }
+    }
+
     if (!state.gujiRedeem.ready) {
+      if (state.agencyAes.loading) {
+        playErrorBeep();
+        setDisplay('AES 資料載入中', 'warning');
+        showUserInfo('請稍後重掃', state.agencyAes.loadError || 'AES / bitmap / 旅行社資料尚未就緒');
+        return;
+      }
+
       playErrorBeep();
       setDisplay('核銷資料載入中', 'warning');
       showUserInfo('請稍後重掃', state.gujiRedeem.loadError || '古吉核銷名單尚未就緒');
@@ -1211,6 +1497,7 @@ function pushRecord(record, originalRaw) {
     content: record.code,
     raw: originalRaw || record.code,
     kind: record.kind || '',
+    agencyName: record.agencyName || '',
   });
   saveToStorage();
   renderTodayVisitorCount();
@@ -1919,6 +2206,10 @@ async function forceSync(options = {}) {
 
     if (state.ticketSummaryOpen) {
       renderTicketSummaryRows(state.todayTicketSummary);
+    }
+
+    if (batch.some((item) => /^B\d{7}$/i.test(String(item.content || '').trim()))) {
+      refreshAgencyAesBitmapIfChanged_();
     }
 
     if (!silent) {
