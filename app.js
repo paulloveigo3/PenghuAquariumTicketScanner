@@ -24,6 +24,7 @@ const CONFIG = {
   },
 };
 
+deleteMode: false,
 const state = {
   wakeLock: null,
   html5Qrcode: null,
@@ -1558,11 +1559,61 @@ function pushRecord(record, originalRaw) {
 function createLogRow(item) {
   const div = document.createElement('div');
   div.className = `log-row ${item.className || ''}`;
+
+  const canDelete = state.deleteMode && item.time !== 'SYS';
+
   div.innerHTML = `
     <div class="log-time">${escapeHtml(item.time || 'SYS')}</div>
     <div class="log-data">${escapeHtml(item.code || '')}</div>
+    <div class="log-actions">
+      ${canDelete ? '<button class="log-delete-btn" type="button">✕</button>' : ''}
+    </div>
   `;
+
+  if (canDelete) {
+    const btn = div.querySelector('.log-delete-btn');
+    btn.addEventListener('click', function (event) {
+      event.stopPropagation();
+      confirmDeleteLogItem(item);
+    });
+  }
+
   return div;
+}
+
+async function confirmDeleteLogItem(item) {
+  const ok = window.confirm(`確定刪除這筆？\n${item.time}｜${item.code}`);
+  if (!ok) return;
+
+  try {
+    const res = await apiRequest('deleteTodayRecord', {
+      time: item.fullTime || item.time,
+      content: item.code
+    }, 'POST');
+
+    if (Array.isArray(res.data)) {
+      state.localHistory = res.data.map((row) => ({
+        time: row[0] || '00:00:00',
+        code: row[1] || '',
+        status: 'ok',
+        className: 'st-ok'
+      }));
+    }
+
+    state.todayVisitorCount = Number(res.todayVisitorCount || 0);
+    state.todayTicketSummary = Array.isArray(res.todayTicketSummary) ? res.todayTicketSummary : [];
+    saveToStorage();
+    renderLogList();
+    renderTodayVisitorCount();
+
+    if (state.ticketSummaryOpen) {
+      renderTicketSummaryRows(state.todayTicketSummary);
+    }
+
+    addSystemLog('單筆刪除完成', 'st-ok');
+  } catch (error) {
+    addSystemLog('單筆刪除失敗：' + error.message, 'st-exp');
+  }
 }
 
 function addLogToUI(item) {
@@ -1583,14 +1634,9 @@ function renderLogList() {
 }
 
 function clearLogs() {
-  const ok = window.confirm('確定清除本機紀錄？這不會刪除雲端資料。');
-  if (!ok) return;
-  state.localHistory = [];
-  state.uploadQueue = [];
-  saveToStorage();
+  state.deleteMode = !state.deleteMode;
   renderLogList();
-  fetchTodayStats();
-  addSystemLog('本機紀錄已清除');
+  addSystemLog(state.deleteMode ? '已進入單筆刪除模式' : '已離開單筆刪除模式');
 }
 
 function toggleHistoryView() {
