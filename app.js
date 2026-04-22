@@ -6,6 +6,15 @@ const CONFIG = {
 
   // 後台 GAS Web App 入口（登入成功後直接跳轉）
   adminExecUrl: 'https://script.google.com/macros/s/AKfycbwqXjcfGwGLXDj9_gD5Uy-_kCpcFqsax12nsOKkJ_JA6A282iRSq-LLGIoAWs0jk2s/exec',
+
+  gujiRedeem: {
+    enabled: true,
+    signaturesJsonUrl: './guji_signatures.json',
+    signaturePositions0Based: [0, 1, 28, 29, 30, 31],
+    ticketPrefix: 'B',
+    startNo: 270001,
+    endNo: 280000,
+  },
 };
 
 const state = {
@@ -43,6 +52,14 @@ const state = {
   rangeModeArmed: false,
   rangeAnchor: null,
   lastArmableTicket: null,
+
+  gujiRedeem: {
+    ready: false,
+    loading: false,
+    loadError: '',
+    signatureToTicket: {},
+    count: 0,
+  },
 };
 
 const els = {};
@@ -68,6 +85,7 @@ function init() {
   closeKeyboardModal();
   openEntrySelection();
 
+  loadGujiRedeemData();
   performSystemCheck();
   fetchSystemSettings();
   fetchTodayStats();
@@ -880,6 +898,121 @@ function handleScanInput(data, source = 'keyboard') {
   focusTrap();
 }
 
+
+function isGujiRedeemHex_(value) {
+  return /^[0-9A-F]{32}$/i.test(String(value || '').trim());
+}
+
+function buildGujiRedeemSignature_(value) {
+  const code = String(value || '').trim().toUpperCase();
+  if (!isGujiRedeemHex_(code)) return '';
+  const pos = CONFIG.gujiRedeem.signaturePositions0Based || [];
+  if (!Array.isArray(pos) || !pos.length) return '';
+  return pos.map(function (p) { return code.charAt(Number(p) || 0); }).join('');
+}
+
+function formatGujiRedeemTicketNo_(no) {
+  return CONFIG.gujiRedeem.ticketPrefix + String(no).padStart(7, '0');
+}
+
+async function loadGujiRedeemData() {
+  if (!CONFIG.gujiRedeem.enabled) return;
+  if (state.gujiRedeem.loading || state.gujiRedeem.ready) return;
+
+  state.gujiRedeem.loading = true;
+  state.gujiRedeem.loadError = '';
+
+  try {
+    const response = await fetch(CONFIG.gujiRedeem.signaturesJsonUrl, {
+      method: 'GET',
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      throw new Error('HTTP ' + response.status);
+    }
+
+    const payload = await response.json();
+    const signatures = Array.isArray(payload && payload.signatures) ? payload.signatures : [];
+    if (!signatures.length) {
+      throw new Error('signatures.json 內容為空');
+    }
+
+    const map = {};
+    signatures.forEach(function (signature, index) {
+      const sig = String(signature || '').trim().toUpperCase();
+      if (!sig) return;
+      const no = Number(CONFIG.gujiRedeem.startNo) + index;
+      map[sig] = formatGujiRedeemTicketNo_(no);
+    });
+
+    state.gujiRedeem.signatureToTicket = map;
+    state.gujiRedeem.count = signatures.length;
+    state.gujiRedeem.ready = true;
+    addSystemLog('古吉核銷碼載入完成：' + signatures.length + ' 筆', 'st-ok');
+  } catch (error) {
+    console.error('loadGujiRedeemData failed', error);
+    state.gujiRedeem.loadError = error && error.message ? error.message : '未知錯誤';
+    addSystemLog('古吉核銷碼載入失敗：' + state.gujiRedeem.loadError, 'st-exp');
+  } finally {
+    state.gujiRedeem.loading = false;
+  }
+}
+
+function resolveGujiRedeemTicket_(rawInput) {
+  if (!CONFIG.gujiRedeem.enabled) return null;
+
+  const code = String(rawInput || '').trim().toUpperCase();
+  if (!isGujiRedeemHex_(code)) return null;
+  if (!state.gujiRedeem.ready) return null;
+
+  const signature = buildGujiRedeemSignature_(code);
+  if (!signature) return null;
+
+  const ticketNo = state.gujiRedeem.signatureToTicket[signature];
+  if (!ticketNo) return null;
+
+  return {
+    signature: signature,
+    ticketNo: ticketNo,
+    raw: code,
+  };
+}
+
+function processGujiRedeemCard(resolved, originalRaw, time, fullTime) {
+  clearLastArmableTicket();
+
+  const ticketNo = String(resolved.ticketNo || '').trim().toUpperCase();
+  if (!ticketNo) return;
+
+  const isDuplicate = state.localHistory.some(function (item) {
+    return item && item.code === ticketNo && item.status === 'ok';
+  });
+
+  if (isDuplicate) {
+    playDuplicateSound();
+    setDisplayWithSubline('重複核銷', ticketNo, 'warning');
+    showUserInfo('古吉核銷碼', '此票已使用');
+    addLogToUI({ time: time, code: ticketNo, className: 'st-warn' });
+    return;
+  }
+
+  playSuccessBeeps(1);
+  setDisplayWithSubline(ticketNo, '古吉核銷通過', 'success');
+  showUserInfo('古吉核銷碼', resolved.signature || '');
+
+  const record = {
+    code: ticketNo,
+    time: time,
+    fullTime: fullTime,
+    status: 'ok',
+    className: 'st-ok',
+    kind: 'guji_redeem',
+  };
+  pushRecord(record, originalRaw || resolved.raw || ticketNo);
+}
+
+
 function processLocalLogic(rawInput, originalRaw = rawInput) {
   const { time, fullTime, todayYmdCompact } = getNowParts();
   hideUserInfo();
@@ -906,6 +1039,27 @@ function processLocalLogic(rawInput, originalRaw = rawInput) {
 
   if (isValidationTarget) {
     processValidationCard(rawInput, originalRaw, time, fullTime);
+    return;
+  }
+
+  if (isGujiRedeemHex_(rawInput)) {
+    if (!state.gujiRedeem.ready) {
+      playErrorBeep();
+      setDisplay('核銷資料載入中', 'warning');
+      showUserInfo('請稍後重掃', state.gujiRedeem.loadError || '古吉核銷名單尚未就緒');
+      return;
+    }
+
+    const resolvedGuji = resolveGujiRedeemTicket_(rawInput);
+    if (!resolvedGuji) {
+      playErrorBeep();
+      setDisplay('無效核銷碼', 'error');
+      showUserInfo('查無對應票號', '請洽管理員');
+      addLogToUI({ time: time, code: rawInput + ' (無效核銷碼)', className: 'st-exp' });
+      return;
+    }
+
+    processGujiRedeemCard(resolvedGuji, originalRaw, time, fullTime);
     return;
   }
 
@@ -1018,6 +1172,7 @@ function pushRecord(record, originalRaw) {
     time: record.fullTime,
     content: record.code,
     raw: originalRaw || record.code,
+    kind: record.kind || '',
   });
   saveToStorage();
   renderTodayVisitorCount();
