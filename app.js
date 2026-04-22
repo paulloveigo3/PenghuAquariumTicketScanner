@@ -24,8 +24,9 @@ const CONFIG = {
   },
 };
 
-deleteMode: false,
+
 const state = {
+  deleteMode: false,
   wakeLock: null,
   html5Qrcode: null,
   isConnected: false,
