@@ -643,7 +643,7 @@ button {
 
 .log-row {
   display: grid;
-  grid-template-columns: 92px minmax(0, 1fr);
+ grid-template-columns: 92px minmax(0, 1fr) 36px;
   gap: 12px;
   padding: 10px 4px;
   border-bottom: 1px solid #333;
@@ -686,6 +686,28 @@ button {
 
 .log-row.st-sys .log-data {
   color: #d0d0d0;
+}
+
+.log-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.log-delete-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.06);
+  color: #ff8a80;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.log-delete-btn:active {
+  transform: scale(0.96);
 }
 
 .footer {
