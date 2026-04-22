@@ -956,26 +956,44 @@ function getNowParts() {
   };
 }
 
+function isLikelyBase64CipherText_(value) {
+  const text = String(value || '').trim();
+  if (!text) return false;
+  if (text.includes(',')) return false;
+  if (isGujiTestCode_(text)) return false;
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(text)) return false;
+  if (text.length < 16 || text.length % 4 !== 0) return false;
+  return true;
+}
+
+function tryDecodeReadableBase64_(value) {
+  const text = String(value || '').trim();
+  if (!isLikelyBase64CipherText_(text)) return '';
+
+  try {
+    const decoded = decodeURIComponent(escape(window.atob(text)));
+    if (!decoded) return '';
+    const printable = (decoded.match(/[\x20-\x7E]/g) || []).length;
+    const printableRatio = printable / decoded.length;
+    const looksReadable =
+      decoded.includes(',') ||
+      /^B\d{7}$/i.test(decoded.trim()) ||
+      /^TEST\d{2}/i.test(decoded.trim()) ||
+      printableRatio >= 0.9;
+
+    return looksReadable ? decoded : '';
+  } catch (error) {
+    return '';
+  }
+}
+
 function normalizeInput(data) {
   if (typeof data !== 'string') return '';
   const trimmed = data.trim();
   if (!trimmed) return '';
 
-  try {
-    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
-    if (
-      trimmed.length >= 8 &&
-      trimmed.length % 4 === 0 &&
-      trimmed.includes('=') &&
-      base64Regex.test(trimmed)
-    ) {
-      return decodeURIComponent(escape(window.atob(trimmed)));
-    }
-  } catch (error) {
-    // ignore
-  }
-
-  return trimmed;
+  const decoded = tryDecodeReadableBase64_(trimmed);
+  return decoded || trimmed;
 }
 
 function handleScanInput(data, source = 'keyboard') {
@@ -1071,16 +1089,29 @@ function getAgencyNameByTicketNo_(ticketNo) {
   return '無';
 }
 
-function decryptAgencyAesHexToTicketNo_(rawInput) {
-  const code = String(rawInput || '').trim().toUpperCase();
-  if (!isGujiRedeemHex_(code)) return '';
+function decryptAgencyAesCipherTextToTicketNo_(rawInput) {
+  const code = String(rawInput || '').trim();
+  if (!code) return '';
   if (!state.agencyAes.ready) return '';
   if (typeof window.CryptoJS === 'undefined') return '';
+
+  let cipherWords = null;
+
+  if (isGujiRedeemHex_(code)) {
+    cipherWords = window.CryptoJS.enc.Hex.parse(code.toUpperCase());
+  } else if (isLikelyBase64CipherText_(code)) {
+    try {
+      cipherWords = window.CryptoJS.enc.Base64.parse(code);
+    } catch (error) {
+      cipherWords = null;
+    }
+  }
+
+  if (!cipherWords) return '';
 
   try {
     const key = window.CryptoJS.enc.Utf8.parse(state.agencyAes.aesKey);
     const iv = window.CryptoJS.enc.Utf8.parse(state.agencyAes.aesIv);
-    const cipherWords = window.CryptoJS.enc.Hex.parse(code);
     const cipherParams = window.CryptoJS.lib.CipherParams.create({ ciphertext: cipherWords });
     const decrypted = window.CryptoJS.AES.decrypt(cipherParams, key, {
       iv: iv,
@@ -1100,11 +1131,12 @@ function decryptAgencyAesHexToTicketNo_(rawInput) {
 }
 
 function resolveAgencyAesTicket_(rawInput) {
-  const ticketNo = decryptAgencyAesHexToTicketNo_(rawInput);
+  const raw = String(rawInput || '').trim();
+  const ticketNo = decryptAgencyAesCipherTextToTicketNo_(raw);
   if (!ticketNo) return null;
 
   return {
-    raw: String(rawInput || '').trim().toUpperCase(),
+    raw: raw,
     ticketNo: ticketNo,
     agencyName: getAgencyNameByTicketNo_(ticketNo),
   };
@@ -1162,6 +1194,7 @@ function processAgencyAesCard(resolved, originalRaw, time, fullTime) {
     className: 'st-ok',
     kind: 'agency_aes',
     agencyName: agencyName,
+    ticketCategory: 'ABN',
   };
 
   pushRecord(record, originalRaw || resolved.raw || ticketNo);
@@ -1311,11 +1344,23 @@ function processGujiRedeemCard(resolved, originalRaw, time, fullTime) {
     status: 'ok',
     className: 'st-ok',
     kind: 'guji_redeem',
+    ticketCategory: 'ABN',
   };
   pushRecord(record, originalRaw || resolved.raw || ticketNo);
   markTicketUsedLocally_(ticketNo);
 }
 
+
+function processUnknownRawCode_(rawInput, time) {
+  const code = String(rawInput || '').trim();
+  if (!code) return;
+
+  playErrorBeep();
+  setDisplayWithSubline('未知亂碼', code, 'warning');
+  showUserInfo('不計入人數', '不寫入 DB / 不列入票種統計');
+  addSystemLog('未知亂碼已略過：' + code, 'st-warn');
+  addLogToUI({ time: time, code: code + ' (SKIPPED)', className: 'st-warn' });
+}
 
 function processLocalLogic(rawInput, originalRaw = rawInput) {
   const { time, fullTime, todayYmdCompact } = getNowParts();
@@ -1351,35 +1396,43 @@ function processLocalLogic(rawInput, originalRaw = rawInput) {
     return;
   }
 
-  if (isGujiRedeemHex_(rawInput)) {
-    if (state.agencyAes.ready) {
-      const resolvedAgency = resolveAgencyAesTicket_(rawInput);
-      if (resolvedAgency) {
-        processAgencyAesCard(resolvedAgency, originalRaw, time, fullTime);
-        return;
-      }
+  const originalCandidate = String(originalRaw || '').trim();
+  const normalizedCandidate = String(rawInput || '').trim();
+  const agencyCandidate = originalCandidate || normalizedCandidate;
+
+  if (state.agencyAes.ready) {
+    const resolvedAgency = resolveAgencyAesTicket_(agencyCandidate) || resolveAgencyAesTicket_(normalizedCandidate);
+    if (resolvedAgency) {
+      processAgencyAesCard(resolvedAgency, originalRaw, time, fullTime);
+      return;
+    }
+  }
+
+  if (isLikelyBase64CipherText_(agencyCandidate)) {
+    if (state.agencyAes.loading) {
+      playErrorBeep();
+      setDisplay('AES 資料載入中', 'warning');
+      showUserInfo('請稍後重掃', state.agencyAes.loadError || 'AES / bitmap / 旅行社資料尚未就緒');
+      return;
     }
 
-    if (!state.gujiRedeem.ready) {
-      if (state.agencyAes.loading) {
-        playErrorBeep();
-        setDisplay('AES 資料載入中', 'warning');
-        showUserInfo('請稍後重掃', state.agencyAes.loadError || 'AES / bitmap / 旅行社資料尚未就緒');
-        return;
-      }
+    processUnknownRawCode_(agencyCandidate, time);
+    return;
+  }
 
+  const gujiCandidate = isGujiRedeemHex_(originalCandidate) ? originalCandidate : normalizedCandidate;
+
+  if (isGujiRedeemHex_(gujiCandidate)) {
+    if (!state.gujiRedeem.ready) {
       playErrorBeep();
       setDisplay('核銷資料載入中', 'warning');
       showUserInfo('請稍後重掃', state.gujiRedeem.loadError || '古吉核銷名單尚未就緒');
       return;
     }
 
-    const resolvedGuji = resolveGujiRedeemTicket_(rawInput);
+    const resolvedGuji = resolveGujiRedeemTicket_(gujiCandidate);
     if (!resolvedGuji) {
-      playErrorBeep();
-      setDisplay('無效核銷碼', 'error');
-      showUserInfo('查無對應票號', '請洽管理員');
-      addLogToUI({ time: time, code: rawInput + ' (無效核銷碼)', className: 'st-exp' });
+      processUnknownRawCode_(gujiCandidate, time);
       return;
     }
 
@@ -1387,10 +1440,7 @@ function processLocalLogic(rawInput, originalRaw = rawInput) {
     return;
   }
 
-  playSuccessBeeps(1);
-  setDisplay(rawInput, 'success');
-  const record = { code: rawInput, time, fullTime, status: 'ok', className: 'st-ok' };
-  pushRecord(record, originalRaw);
+  processUnknownRawCode_(normalizedCandidate || originalCandidate, time);
 }
 
 function processTicketLikeRecord(rawInput, originalRaw, time, fullTime, todayYmdCompact) {
@@ -1498,6 +1548,7 @@ function pushRecord(record, originalRaw) {
     raw: originalRaw || record.code,
     kind: record.kind || '',
     agencyName: record.agencyName || '',
+    ticketCategory: record.ticketCategory || '',
   });
   saveToStorage();
   renderTodayVisitorCount();
