@@ -1402,6 +1402,26 @@ function processLocalLogic(rawInput, originalRaw = rawInput) {
   const normalizedCandidate = String(rawInput || '').trim();
   const agencyCandidate = originalCandidate || normalizedCandidate;
 
+  // 新式隨機票是 32 碼 HEX，不是 AES。
+  // 必須先走古吉核銷名單，比對失敗後才允許舊 AES 流程 fallback。
+  const gujiCandidate = isGujiRedeemHex_(originalCandidate) ? originalCandidate : normalizedCandidate;
+  if (isGujiRedeemHex_(gujiCandidate)) {
+    if (!state.gujiRedeem.ready) {
+      playErrorBeep();
+      setDisplay('核銷資料載入中', 'warning');
+      showUserInfo('請稍後重掃', state.gujiRedeem.loadError || '古吉核銷名單尚未就緒');
+      return;
+    }
+
+    const resolvedGuji = resolveGujiRedeemTicket_(gujiCandidate);
+    if (resolvedGuji) {
+      processGujiRedeemCard(resolvedGuji, originalRaw, time, fullTime);
+      return;
+    }
+
+    // 若未命中名單，不在這裡 return，讓舊版 AES HEX 票仍有 fallback 機會。
+  }
+
   if (state.agencyAes.ready) {
     const resolvedAgency = resolveAgencyAesTicket_(agencyCandidate) || resolveAgencyAesTicket_(normalizedCandidate);
     if (resolvedAgency) {
@@ -1419,26 +1439,6 @@ function processLocalLogic(rawInput, originalRaw = rawInput) {
     }
 
     processUnknownRawCode_(agencyCandidate, time);
-    return;
-  }
-
-  const gujiCandidate = isGujiRedeemHex_(originalCandidate) ? originalCandidate : normalizedCandidate;
-
-  if (isGujiRedeemHex_(gujiCandidate)) {
-    if (!state.gujiRedeem.ready) {
-      playErrorBeep();
-      setDisplay('核銷資料載入中', 'warning');
-      showUserInfo('請稍後重掃', state.gujiRedeem.loadError || '古吉核銷名單尚未就緒');
-      return;
-    }
-
-    const resolvedGuji = resolveGujiRedeemTicket_(gujiCandidate);
-    if (!resolvedGuji) {
-      processUnknownRawCode_(gujiCandidate, time);
-      return;
-    }
-
-    processGujiRedeemCard(resolvedGuji, originalRaw, time, fullTime);
     return;
   }
 
