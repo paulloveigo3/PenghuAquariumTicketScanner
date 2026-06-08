@@ -1,5 +1,5 @@
 const CONFIG = {
-  apiBaseUrl: 'https://script.google.com/macros/s/AKfycbxoPBxtKpQ41b3qEo-iU00rfNjppEQWJxe_oXB5j73OJbWvYKpZuscg6XCdMAQQcZaTsA/exec',
+  apiBaseUrl: 'https://script.google.com/macros/s/AKfycbzU4lGBVhd-sQFVQ32Lb49K_Cr4E222HyUASn7oFKcPvjVbGRu-cBYysveIZ11Z81XROg/exec',
   storagePrefix: 'ticketScanner_v3',
   defaultAutoSyncMinutes: 10,
   timezone: 'Asia/Taipei',
