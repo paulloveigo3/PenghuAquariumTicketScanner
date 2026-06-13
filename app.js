@@ -116,7 +116,7 @@ function init() {
   openEntrySelection();
 
   loadGujiRedeemData();
-  loadAgencyAesBootstrap(true);
+  loadAgencyAesBootstrap(true, true);
   performSystemCheck();
   fetchSystemSettings();
   fetchTodayStats();
