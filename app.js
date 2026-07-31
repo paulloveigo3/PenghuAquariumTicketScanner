@@ -5,7 +5,7 @@ const CONFIG = {
   timezone: 'Asia/Taipei',
 
   // 後台 GAS Web App 入口（登入成功後直接跳轉）
-  adminExecUrl: 'https://script.google.com/macros/s/AKfycby6TyOCTbTa-HsTt1m_G9ThMgfDv3KTr9dQkj2FaE5VD7C-XKt-7wH67zrmz2jYQz-l/exec',
+  adminExecUrl: 'https://script.google.com/macros/s/AKfycbwvYjKf8SwCQnNttjig9BGGmQvdyX2lA2ArEUhejiFHoCLv-qABk32Nll4DEiVNgySx/exec',
 
   gujiRedeem: {
     enabled: true,
