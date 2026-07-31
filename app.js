@@ -6,6 +6,7 @@ const CONFIG = {
 
   // 後台 GAS Web App 入口（登入成功後直接跳轉）
   adminExecUrl: 'https://script.google.com/macros/s/AKfycbwvYjKf8SwCQnNttjig9BGGmQvdyX2lA2ArEUhejiFHoCLv-qABk32Nll4DEiVNgySx/exec',
+  
 
   gujiRedeem: {
     enabled: true,
