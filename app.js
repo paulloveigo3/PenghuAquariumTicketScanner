@@ -1771,7 +1771,8 @@ async function submitDesktopLogin() {
 }
 
 function buildAdminRedirectUrl_(loginRes, loginUser) {
-  const adminExecUrl = String(loginRes?.adminExecUrl || CONFIG.adminExecUrl || '').trim();
+  // 前端 CONFIG 為正式跳轉網址；避免登入 API 回傳的舊網址覆蓋本次修改。
+  const adminExecUrl = String(CONFIG.adminExecUrl || loginRes?.adminExecUrl || '').trim();
 
   if (!adminExecUrl) {
     throw new Error('尚未設定後台 GAS Web App URL');
@@ -1795,7 +1796,8 @@ function buildAdminRedirectUrl_(loginRes, loginUser) {
 }
 
 function persistAdminJumpContext_(loginRes, loginUser) {
-  const adminExecUrl = String(loginRes?.adminExecUrl || CONFIG.adminExecUrl || '').trim();
+  // 與實際跳轉使用相同優先順序，確保 sessionStorage 不會保存後端舊網址。
+  const adminExecUrl = String(CONFIG.adminExecUrl || loginRes?.adminExecUrl || '').trim();
   const adminContext = {
     adminExecUrl: adminExecUrl && !adminExecUrl.includes('PASTE_NEW_WEB_GS_EXEC_URL_HERE') ? adminExecUrl : '',
     fromAccount: loginUser?.account || '',
