@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "configured": false,
+  "note": "請用設定檔產生器填入舊加密碼及補發 KEY/IV；目前尚未設定，不代表任何票已註銷。",
+  "blockedCiphertexts": [],
+  "reissuedTickets": []
+}
