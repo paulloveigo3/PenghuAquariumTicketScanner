@@ -999,7 +999,7 @@ function normalizeInput(data) {
   return decoded || trimmed;
 }
 
-function handleScanInput(data, source = 'keyboard') {
+async function handleScanInput(data, source = 'keyboard') {
   if (!data) return;
   const rawInput = data.trim();
   if (!rawInput) return;
@@ -1011,6 +1011,26 @@ function handleScanInput(data, source = 'keyboard') {
     return;
   }
 
+  if (isGujiRedeemHex_(rawInput) || isLikelyBase64CipherText_(rawInput)) {
+    try {
+      setDisplay('檢查遺失票券…', 'warning');
+      await loadLostCipherConfig_();
+      if (isBlockedCipher_(rawInput)) {
+        clearLastArmableTicket(); playErrorBeep();
+        setDisplay('遺失票券', 'error');
+        showUserInfo('已註銷，禁止入場', '請交由主管處理');
+        addLogToUI({time:getNowParts().time,code:'遺失票券（舊加密碼已攔截）',className:'st-exp'});
+        focusTrap(); return;
+      }
+      const replacement = await resolveReissuedAesTicket_(rawInput);
+      if (replacement) { const now=getNowParts(); hideUserInfo(); processAgencyAesCard(replacement, rawInput, now.time, now.fullTime); focusTrap(); return; }
+    } catch(error) {
+      clearLastArmableTicket(); playErrorBeep();
+      setDisplay('註銷清單讀取失敗', 'error');
+      showUserInfo('尚未放行，請重掃', String(error.message));
+      focusTrap(); return;
+    }
+  }
   const decodedData = normalizeInput(rawInput);
   processLocalLogic(decodedData, rawInput);
   focusTrap();
@@ -2347,3 +2367,58 @@ function escapeHtml(value) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+// GitHub-only lost ciphertext configuration. Does not change backend or bitmap.
+let lostCipherConfig_ = {blocked:new Set(), reissues:new Map()};
+let lostCipherLoading_ = null;
+function canonicalCipher_(raw) {
+  const s=String(raw || '').trim();
+  if (/^[0-9a-f]{32}$/i.test(s)) return s.toUpperCase();
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(s) || s.length % 4) throw new Error('加密碼必須為原始 32 碼 HEX 或標準 Base64');
+  const b=window.atob(s);
+  if (b.length !== 16) throw new Error('目前票券密文必須為 16 bytes');
+  return Array.from(b).map(c=>c.charCodeAt(0).toString(16).padStart(2,'0')).join('').toUpperCase();
+}
+function validateLostCipherConfig_(p) {
+  if (!p || p.version !== 1 || p.configured !== true) throw new Error('請先完成 lost-ticket-config.json 設定');
+  if (!Array.isArray(p.blockedCiphertexts) || !Array.isArray(p.reissuedTickets)) throw new Error('註銷設定格式錯誤');
+  const blocked=new Set(p.blockedCiphertexts.map(canonicalCipher_));
+  const reissues=new Map();
+  p.reissuedTickets.forEach(r=>{
+    if(!r || !/^B\d{7}$/.test(r.ticketNo)) throw new Error('補發票號格式錯誤');
+    const n=Number(r.ticketNo.slice(1));
+    if(n<280001 || n>1000000) throw new Error('補發範圍超出 AES 票號範圍');
+    const hex=String(r.ciphertextHash || '').toUpperCase();
+    if(!/^[0-9A-F]{64}$/.test(hex)) throw new Error('補發碼 SHA-256 格式錯誤');
+    if(reissues.has(hex) && reissues.get(hex)!==r.ticketNo) throw new Error('同一補發碼對應不同票號');
+    reissues.set(hex,r.ticketNo);
+  });
+  return {blocked:blocked,reissues:reissues};
+}
+
+async function loadLostCipherConfig_() {
+  if(lostCipherLoading_) return lostCipherLoading_;
+  lostCipherLoading_=(async()=>{
+    const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),10000);
+    try {
+      const url=new URL('./lost-ticket-config.json',window.location.href);
+      url.searchParams.set('_',String(Date.now()));
+      const res=await fetch(url.href,{cache:'no-store',signal:ctrl.signal});
+      if(!res.ok) throw new Error('清單 HTTP '+res.status);
+      const next=validateLostCipherConfig_(await res.json());
+      lostCipherConfig_=next;
+    } finally {clearTimeout(timer);}
+  })();
+  try {await lostCipherLoading_;} finally {lostCipherLoading_=null;}
+}
+async function resolveReissuedAesTicket_(raw) {
+  let hex; try {hex=canonicalCipher_(raw);} catch(e){return null;}
+  if(lostCipherConfig_.blocked.has(hex)) return null;
+  if(!lostCipherConfig_.reissues.size) return null;
+  const digest=await window.crypto.subtle.digest('SHA-256',new TextEncoder().encode(hex));
+  const hash=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('').toUpperCase();
+  const ticket=lostCipherConfig_.reissues.get(hash);
+  if(!ticket) return null;
+  return {ticketNo:ticket,raw:String(raw),agencyName:getAgencyNameByTicketNo_(ticket)};
+}
+
+function isBlockedCipher_(raw) { try { return lostCipherConfig_.blocked.has(canonicalCipher_(raw)); } catch(e) { return false; } }
